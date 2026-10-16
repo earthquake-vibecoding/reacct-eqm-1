@@ -101,6 +101,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             <span className={styles.sourceIndicatorDot} />
             {t('sources.nied')}
           </button>
+          {/* [미사용] Yahoo! 지진 데이터 소스 비활성화
           <button
             type="button"
             role="tab"
@@ -111,6 +112,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             <span className={styles.sourceIndicatorDotYahoo} />
             {t('sources.yahoo')}
           </button>
+          */}
           <button
             type="button"
             role="tab"

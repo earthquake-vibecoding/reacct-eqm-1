@@ -1,6 +1,6 @@
 import { haversineDistance, getJindoString, NoiseFilterService } from './utils';
 import { getExactJindoColor } from './colorMap';
-import { StationPointMeta } from './KmoniService';
+import { StationPointMeta } from './types';
 
 export interface StationData {
   id: number;

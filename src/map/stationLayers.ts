@@ -1,7 +1,6 @@
 import i18n from '../i18n';
 import { QuakeDetectService } from '../QuakeDetectService';
-import { StationPointMeta } from '../KmoniService';
-import { DataSourceType, HoverInfo } from '../types';
+import { DataSourceType, HoverInfo, StationPointMeta } from '../types';
 import { translateRegionName } from '../translateUtils';
 
 export async function loadAndSetupStationLayers(
@@ -22,6 +21,7 @@ export async function loadAndSetupStationLayers(
     if (metaResp.ok) stationMetas = await metaResp.json();
   } catch (e) { console.warn('Failed to load station metadata:', e); }
 
+  /* [미사용] Yahoo! SiteList 초기화 비활성화
   try {
     const yahooResp = await fetch(intensityPointsUrl);
     if (yahooResp.ok) {
@@ -42,9 +42,10 @@ export async function loadAndSetupStationLayers(
       yahooMetaMap[i] = { name: closest ? closest.Name : `관측소 ${i}`, region: closest ? closest.Region : '' };
     });
   }
+  */
 
   const kmoniInitialGeojson = stationMetas.length > 0 ? kmoniQuakeService.initKmoniStations(stationMetas) : null;
-  if (yahooPointsItems.length > 0) yahooQuakeService.initStations(yahooPointsItems, yahooMetaMap);
+  // if (yahooPointsItems.length > 0) yahooQuakeService.initStations(yahooPointsItems, yahooMetaMap);
 
   const initialGeojson = kmoniInitialGeojson || yahooQuakeService.geojson || { type: 'FeatureCollection', features: [] };
 
