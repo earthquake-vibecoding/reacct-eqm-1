@@ -111,7 +111,8 @@ export class WebhookNotifier {
     lastKmoniGif: Buffer | null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gridFeatures: any[],
-    eew: WolfxServerEEW | null = null
+    eew: WolfxServerEEW | null = null,
+    lastEewGif: Buffer | null = null
   ) {
     const webhookUrl = process.env.WEBHOOK_URL;
     if (!webhookUrl) return;
@@ -167,7 +168,7 @@ export class WebhookNotifier {
       timestamp: new Date().toISOString()
     };
 
-    const mapGif = buildSingleMapGif(lastKmoniGif, gridFeatures);
+    const mapGif = buildSingleMapGif(lastKmoniGif, gridFeatures, lastEewGif);
     if (mapGif) {
       embed.image = { url: 'attachment://map.gif' };
     }

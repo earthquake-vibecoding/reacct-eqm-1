@@ -29,6 +29,7 @@ export class ServerIntensityAggregator {
   private webhook = new WebhookNotifier();
   private historyStore = new EventHistoryStore();
   private lastKmoniGif: Buffer | null = null;
+  private lastEewGif: Buffer | null = null;
   private lastKmoniSuccessAt = 0;
   private lastKmoniDataTime = '';
   private kmoniConsecutiveFailures = 0;
@@ -94,7 +95,7 @@ export class ServerIntensityAggregator {
   private triggerCurrentWebhook(source: string, isNewEvent: boolean) {
     const top = this.detectService?.getTopStations(1)?.[0] ?? null;
     const grid = this.detectService?.lastDetectedGeojson?.features ?? [];
-    this.webhook.triggerWebhook(source, isNewEvent, top, this.lastKmoniGif, grid, this.activeEew);
+    this.webhook.triggerWebhook(source, isNewEvent, top, this.lastKmoniGif, grid, this.activeEew, this.lastEewGif);
   }
 
   private async pollWolfx() {
@@ -177,8 +178,9 @@ export class ServerIntensityAggregator {
   private async pollKmoni() {
     const res = await fetchKmoniGifWithDelay(this.kmoniOptimalDelay);
     if (!res) { this.kmoniConsecutiveFailures++; return; }
-    const { buffer, timeStr, delay } = res;
+    const { buffer, eewBuffer, timeStr, delay } = res;
     this.lastKmoniGif = buffer;
+    this.lastEewGif = eewBuffer;
     this.kmoniOptimalDelay = delay;
     this.lastKmoniSuccessAt = Date.now();
     this.lastKmoniDataTime = timeStr;
@@ -187,12 +189,12 @@ export class ServerIntensityAggregator {
     if (this.isEventBuffering) {
       const last = this.eventFrameBuffer[this.eventFrameBuffer.length - 1];
       if ((!last || last.timeStr !== timeStr) && this.eventFrameBuffer.length < MAX_EVENT_FRAMES) {
-        this.eventFrameBuffer.push({ timeStr, gif: buffer, grid: this.lastActiveGridGeojson });
+        this.eventFrameBuffer.push({ timeStr, gif: buffer, eewGif: eewBuffer, grid: this.lastActiveGridGeojson });
       }
     }
     const ringLast = this.recentFrameRing[this.recentFrameRing.length - 1];
     if (!ringLast || ringLast.timeStr !== timeStr) {
-      this.recentFrameRing.push({ timeStr, gif: buffer, grid: this.lastActiveGridGeojson });
+      this.recentFrameRing.push({ timeStr, gif: buffer, eewGif: eewBuffer, grid: this.lastActiveGridGeojson });
       if (this.recentFrameRing.length > RECENT_FRAME_RING) this.recentFrameRing.shift();
     }
     try { this.broadcast({ timestamp: Date.now(), source: 'kmoni', dataTime: timeStr, intensities: parseIntensityGif(buffer, this.stations) }); } catch {}

@@ -26,6 +26,14 @@ export function getKmoniShindoUrl(now: Date): { url: string; timeStr: string } {
   };
 }
 
+export function getKmoniEewWaveUrl(now: Date): { url: string; timeStr: string } {
+  const { folder, file, timeStr } = formatJstStamp(now);
+  return {
+    url: `http://www.kmoni.bosai.go.jp/data/map_img/PSWaveImg/eew/${folder}/${file}.eew.gif`,
+    timeStr,
+  };
+}
+
 export function getLmoniUrl(now: Date): { url: string; timeStr: string } {
   const { folder, file, timeStr } = formatJstStamp(now);
   return {
@@ -39,12 +47,13 @@ const DEFAULT_UA =
 
 export async function fetchKmoniGifWithDelay(
   baseDelay: number
-): Promise<{ buffer: Buffer; timeStr: string; delay: number } | null> {
+): Promise<{ buffer: Buffer; eewBuffer: Buffer | null; timeStr: string; delay: number } | null> {
   const candidates = [baseDelay, baseDelay + 1000, baseDelay - 1000, 2000, 3000, 4000, 1000, 5000];
   const delays = Array.from(new Set(candidates)).filter((d) => d >= 1000 && d <= 6000);
 
   for (const delay of delays) {
-    const { url, timeStr } = getKmoniShindoUrl(new Date(Date.now() - delay));
+    const targetDate = new Date(Date.now() - delay);
+    const { url, timeStr } = getKmoniShindoUrl(targetDate);
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 1800);
@@ -58,7 +67,27 @@ export async function fetchKmoniGifWithDelay(
       clearTimeout(timeout);
       if (resp.ok) {
         const buffer = Buffer.from(await resp.arrayBuffer());
-        return { buffer, timeStr, delay };
+        let eewBuffer: Buffer | null = null;
+        try {
+          const { url: eewUrl } = getKmoniEewWaveUrl(targetDate);
+          const eewCtrl = new AbortController();
+          const eewTimer = setTimeout(() => eewCtrl.abort(), 1200);
+          const eewResp = await fetch(eewUrl, {
+            signal: eewCtrl.signal,
+            headers: {
+              'User-Agent': DEFAULT_UA,
+              Referer: 'http://www.kmoni.bosai.go.jp/',
+            },
+          });
+          clearTimeout(eewTimer);
+          if (eewResp.ok) {
+            const buf = Buffer.from(await eewResp.arrayBuffer());
+            if (buf.length > 4 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) {
+              eewBuffer = buf;
+            }
+          }
+        } catch {}
+        return { buffer, eewBuffer, timeStr, delay };
       }
     } catch {}
   }
