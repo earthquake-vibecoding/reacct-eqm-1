@@ -49,6 +49,7 @@ export interface DetectedEventHistoryEntry {
 export interface BufferedFrame {
   timeStr: string;
   gif: Buffer;
+  eewGif?: Buffer | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   grid: any;
 }

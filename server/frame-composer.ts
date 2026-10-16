@@ -6,7 +6,7 @@ import { GifReader, GifWriter } from 'omggif';
 import { INSET_PROJECTION, MAIN_PROJECTION, isInInsetRegion } from './kmoni-pixel';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function compositeFrame(gifBuffer: Buffer, gridFeatures: any[]): {
+export function compositeFrame(gifBuffer: Buffer, gridFeatures: any[], eewGifBuffer?: Buffer | null): {
   width: number; height: number; indices: Uint8Array; palette: number[];
 } | null {
   try {
@@ -19,6 +19,25 @@ export function compositeFrame(gifBuffer: Buffer, gridFeatures: any[]): {
       if (rgba[p * 4 + 3] === 0) {
         rgba[p * 4] = 13; rgba[p * 4 + 1] = 13; rgba[p * 4 + 2] = 18; rgba[p * 4 + 3] = 255;
       }
+    }
+
+    if (eewGifBuffer && eewGifBuffer.length > 0) {
+      try {
+        const eewReader = new GifReader(eewGifBuffer);
+        if (eewReader.width === width && eewReader.height === height) {
+          const eewRgba = new Uint8Array(width * height * 4);
+          eewReader.decodeAndBlitFrameRGBA(0, eewRgba);
+          for (let p = 0; p < width * height; p++) {
+            const idx = p * 4;
+            if (eewRgba[idx + 3] > 0) {
+              rgba[idx] = eewRgba[idx];
+              rgba[idx + 1] = eewRgba[idx + 1];
+              rgba[idx + 2] = eewRgba[idx + 2];
+              rgba[idx + 3] = 255;
+            }
+          }
+        }
+      } catch {}
     }
 
     if (gridFeatures.length > 0) {
@@ -85,9 +104,9 @@ export function compositeFrame(gifBuffer: Buffer, gridFeatures: any[]): {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildSingleMapGif(gifBuffer: Buffer | null, gridFeatures: any[]): Buffer | null {
+export function buildSingleMapGif(gifBuffer: Buffer | null, gridFeatures: any[], eewGifBuffer?: Buffer | null): Buffer | null {
   if (!gifBuffer) return null;
-  const frame = compositeFrame(gifBuffer, gridFeatures);
+  const frame = compositeFrame(gifBuffer, gridFeatures, eewGifBuffer);
   if (!frame) return null;
   const outBuf = new Uint8Array(frame.width * frame.height + 768 + 4096);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,13 +117,13 @@ export function buildSingleMapGif(gifBuffer: Buffer | null, gridFeatures: any[])
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildEventAnimationGif(frames: { timeStr: string; gif: Buffer }[], gridFeatures: any[]): Buffer | null {
+export function buildEventAnimationGif(frames: { timeStr: string; gif: Buffer; eewGif?: Buffer | null }[], gridFeatures: any[]): Buffer | null {
   if (frames.length === 0) return null;
   try {
     const encoded: { indices: Uint8Array; palette: number[] }[] = [];
     let width = 0, height = 0;
-    for (const { gif } of frames) {
-      const frame = compositeFrame(gif, gridFeatures);
+    for (const { gif, eewGif } of frames) {
+      const frame = compositeFrame(gif, gridFeatures, eewGif);
       if (!frame) continue;
       width = frame.width; height = frame.height;
       encoded.push({ indices: frame.indices, palette: frame.palette });
@@ -125,12 +144,12 @@ export function buildEventAnimationGif(frames: { timeStr: string; gif: Buffer }[
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function buildEventAnimationMp4(frames: { timeStr: string; gif: Buffer }[], gridFeatures: any[]): Promise<Buffer | null> {
+export async function buildEventAnimationMp4(frames: { timeStr: string; gif: Buffer; eewGif?: Buffer | null }[], gridFeatures: any[]): Promise<Buffer | null> {
   if (frames.length === 0) return null;
   const composited: { indices: Uint8Array; palette: number[] }[] = [];
   let width = 0, height = 0;
-  for (const { gif } of frames) {
-    const frame = compositeFrame(gif, gridFeatures);
+  for (const { gif, eewGif } of frames) {
+    const frame = compositeFrame(gif, gridFeatures, eewGif);
     if (!frame) continue;
     width = frame.width; height = frame.height;
     composited.push(frame);
