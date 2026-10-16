@@ -74,14 +74,16 @@ export class NoiseFilterService {
   }
 }
 
+const JST_OFFSET_MS = 9 * 3600_000;
+
 /**
  * 임의 시각을 일본 표준시(JST, UTC+9)의 "HH:MM:SS" 문자열로 변환한다.
  * 방문자 기기 시간대와 무관하게 일관된 표기를 위해 사용.
  */
 export function formatJSTClock(date: Date = new Date()): string {
-  const jst = new Date(date.getTime() + (9 * 60 + date.getTimezoneOffset()) * 60000);
+  const jst = new Date(date.getTime() + JST_OFFSET_MS);
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(jst.getHours())}:${p(jst.getMinutes())}:${p(jst.getSeconds())}`;
+  return `${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())}:${p(jst.getUTCSeconds())}`;
 }
 
 /**
@@ -89,7 +91,7 @@ export function formatJSTClock(date: Date = new Date()): string {
  * 감지 히스토리 등 날짜가 함께 필요한 곳에서 사용.
  */
 export function formatJSTDateTime(date: Date = new Date()): string {
-  const jst = new Date(date.getTime() + (9 * 60 + date.getTimezoneOffset()) * 60000);
+  const jst = new Date(date.getTime() + JST_OFFSET_MS);
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(jst.getMonth() + 1)}/${p(jst.getDate())} ${formatJSTClock(jst)}`;
+  return `${p(jst.getUTCMonth() + 1)}/${p(jst.getUTCDate())} ${formatJSTClock(date)}`;
 }
