@@ -145,7 +145,7 @@ export class WebhookNotifier {
       description: '감지가 유지된 구간의 실시간 지도 애니메이션입니다.',
       color: 0xef4444,
       fields: [
-        { name: '감지 구간', value: `${firstTime} ~ ${lastTime} (KST)`, inline: false },
+        { name: '감지 구간', value: `${firstTime} ~ ${lastTime} (JST)`, inline: false },
         { name: '구간 길이', value: `약 ${durationSec}초`, inline: true }
       ],
       timestamp: new Date().toISOString()

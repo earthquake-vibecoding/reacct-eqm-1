@@ -1,11 +1,11 @@
 function formatJstStamp(now: Date): { folder: string; file: string; timeStr: string } {
-  const jst = new Date(now.getTime() + (9 * 60 + now.getTimezoneOffset()) * 60000);
-  const yyyy = jst.getFullYear();
-  const MM = String(jst.getMonth() + 1).padStart(2, '0');
-  const dd = String(jst.getDate()).padStart(2, '0');
-  const HH = String(jst.getHours()).padStart(2, '0');
-  const mm = String(jst.getMinutes()).padStart(2, '0');
-  const ss = String(jst.getSeconds()).padStart(2, '0');
+  const jst = new Date(now.getTime() + 9 * 3600_000);
+  const yyyy = jst.getUTCFullYear();
+  const MM = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(jst.getUTCDate()).padStart(2, '0');
+  const HH = String(jst.getUTCHours()).padStart(2, '0');
+  const mm = String(jst.getUTCMinutes()).padStart(2, '0');
+  const ss = String(jst.getUTCSeconds()).padStart(2, '0');
 
   const folder = `${yyyy}${MM}${dd}`;
   const file = `${folder}${HH}${mm}${ss}`;
