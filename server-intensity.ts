@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { QuakeDetectService } from './src/QuakeDetectService';
-import type { BufferedFrame, DetectedEventHistoryEntry, IntensityUpdatePayload, LpUpdatePayload, SsePayload, StationPointMeta } from './server/intensity-types';
+import type { BufferedFrame, DetectedEventHistoryEntry, IntensityUpdatePayload, LpUpdatePayload, SsePayload, StationPointMeta, WolfxServerEEW } from './server/intensity-types';
 import { INSET_PROJECTION, MAIN_PROJECTION, getIntensityFromRGB, getLpFromRGB, isInInsetRegion, jindoToStr, lpClsToStr, parseIntensityGif, parseLpGif, validateSpatialSupport } from './server/kmoni-pixel';
 import { WebhookNotifier } from './server/webhook-notifier';
 import { EventHistoryStore } from './server/history-store';
-import { fetchKmoniGifWithDelay, fetchLmoniGifWithDelay, fetchYahooIntensitiesWithDelay } from './server/upstream-fetchers';
+import { fetchKmoniGifWithDelay, fetchLmoniGifWithDelay, fetchWolfxActiveEEW, fetchYahooIntensitiesWithDelay } from './server/upstream-fetchers';
 
 export type { StationPointMeta, IntensityUpdatePayload, LpUpdatePayload, SsePayload, DetectedEventHistoryEntry };
 export {
@@ -41,6 +41,8 @@ export class ServerIntensityAggregator {
   private kmoniOptimalDelay = 2000;
   private lmoniOptimalDelay = 2000;
   private yahooOptimalDelay = 1000;
+  private activeEew: WolfxServerEEW | null = null;
+  private lastWolfxPollAt = 0;
 
   constructor() {
     this.loadStationList();
@@ -92,7 +94,31 @@ export class ServerIntensityAggregator {
   private triggerCurrentWebhook(source: string, isNewEvent: boolean) {
     const top = this.detectService?.getTopStations(1)?.[0] ?? null;
     const grid = this.detectService?.lastDetectedGeojson?.features ?? [];
-    this.webhook.triggerWebhook(source, isNewEvent, top, this.lastKmoniGif, grid);
+    this.webhook.triggerWebhook(source, isNewEvent, top, this.lastKmoniGif, grid, this.activeEew);
+  }
+
+  private async pollWolfx() {
+    const now = Date.now();
+    if (now - this.lastWolfxPollAt < 2000) return;
+    this.lastWolfxPollAt = now;
+
+    const eew = await fetchWolfxActiveEEW();
+    if (!eew) {
+      this.activeEew = null;
+      return;
+    }
+
+    const isChanged =
+      !this.activeEew ||
+      this.activeEew.EventID !== eew.EventID ||
+      this.activeEew.Serial !== eew.Serial ||
+      this.activeEew.isCancel !== eew.isCancel ||
+      this.activeEew.isFinal !== eew.isFinal;
+
+    this.activeEew = eew;
+    if (isChanged && this.webhook.hasActiveMessage()) {
+      await this.webhook.patchEewOnActiveWebhook(eew);
+    }
   }
 
   private broadcast(payload: IntensityUpdatePayload) {
@@ -125,7 +151,7 @@ export class ServerIntensityAggregator {
           const fullFrames = [...preRoll, ...this.eventFrameBuffer];
           this.eventFrameBuffer = [];
           const gridFeatures = this.lastActiveGridGeojson?.features ?? [];
-          this.webhook.sendEventAnimationWebhook(fullFrames, gridFeatures)
+          this.webhook.sendEventAnimationWebhook(fullFrames, gridFeatures, this.activeEew)
             .then((anim) => this.historyStore.recordEventHistory(anim, fullFrames, this.stations))
             .catch(() => this.historyStore.recordEventHistory(null, fullFrames, this.stations));
         },
@@ -139,7 +165,7 @@ export class ServerIntensityAggregator {
       if (this.isDestroyed || isRunning) return;
       isRunning = true;
       const startTime = Date.now();
-      try { await Promise.allSettled([this.pollKmoni(), /* this.pollYahoo(), */ this.pollLmoni()]); }
+      try { await Promise.allSettled([this.pollKmoni(), /* this.pollYahoo(), */ this.pollLmoni(), this.pollWolfx()]); }
       finally {
         isRunning = false;
         if (!this.isDestroyed) this.timer = setTimeout(loop, Math.max(50, 1000 - (Date.now() - startTime)));

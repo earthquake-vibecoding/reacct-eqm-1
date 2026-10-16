@@ -1,3 +1,5 @@
+import type { WolfxServerEEW } from './intensity-types';
+
 function formatJstStamp(now: Date): { folder: string; file: string; timeStr: string } {
   const jst = new Date(now.getTime() + 9 * 3600_000);
   const yyyy = jst.getUTCFullYear();
@@ -125,4 +127,43 @@ export async function fetchYahooIntensitiesWithDelay(
     } catch {}
   }
   return null;
+}
+
+export async function fetchWolfxActiveEEW(): Promise<WolfxServerEEW | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1800);
+    const resp = await fetch('https://api.wolfx.jp/jma_eew.json', {
+      signal: controller.signal,
+      headers: { 'User-Agent': DEFAULT_UA },
+    });
+    clearTimeout(timeout);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (!data || !data.OriginTime || data.Hypocenter === undefined) return null;
+
+    const formatted = String(data.OriginTime).replace(/\//g, '-');
+    const originTs = new Date(formatted.includes('+') || formatted.includes('Z') ? formatted : `${formatted}+09:00`).getTime();
+    if (isNaN(originTs)) return null;
+    const elapsedSec = (Date.now() - originTs) / 1000;
+    if (elapsedSec > 180 || elapsedSec < -60) return null;
+
+    return {
+      EventID: data.EventID || `${data.OriginTime}_${data.Hypocenter}`,
+      Serial: typeof data.Serial === 'number' ? data.Serial : 1,
+      Title: data.Title,
+      OriginTime: data.OriginTime,
+      Hypocenter: data.Hypocenter,
+      Latitude: data.Latitude,
+      Longitude: data.Longitude,
+      Magunitude: data.Magunitude,
+      Depth: data.Depth,
+      MaxIntensity: data.MaxIntensity,
+      isCancel: Boolean(data.isCancel),
+      isFinal: Boolean(data.isFinal),
+      isWarn: Boolean(data.Title?.includes('警報') || (data.MaxIntensity && ['5弱', '5強', '6弱', '6強', '7'].includes(data.MaxIntensity))),
+    };
+  } catch {
+    return null;
+  }
 }

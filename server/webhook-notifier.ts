@@ -1,8 +1,29 @@
 import { INTENSITY_COLORS } from '../src/colorMap';
 import { TopStationItem } from '../src/QuakeDetectService';
-import { BufferedFrame } from './intensity-types';
+import { BufferedFrame, WolfxServerEEW } from './intensity-types';
 import { jindoToStr } from './kmoni-pixel';
 import { buildEventAnimationGif, buildEventAnimationMp4, buildSingleMapGif } from './frame-composer';
+
+function buildEewField(eew: WolfxServerEEW | null) {
+  if (!eew) return null;
+  if (eew.isCancel) {
+    return {
+      name: `📡 긴급지진속보 (제${eew.Serial ?? 1}보 · 취소)`,
+      value: '취소보가 발표되었습니다.',
+      inline: false,
+    };
+  }
+  const tag = eew.isFinal ? '최종보' : eew.isWarn ? '경보' : '예보';
+  const hypo = eew.Hypocenter || '알 수 없음';
+  const mag = eew.Magunitude !== undefined ? `M${eew.Magunitude}` : '-';
+  const depth = eew.Depth !== undefined ? `${eew.Depth}km` : '-';
+  const maxInt = eew.MaxIntensity || '-';
+  return {
+    name: `📡 JMA 긴급지진속보 (제${eew.Serial ?? 1}보 · ${tag})`,
+    value: `진원지: **${hypo}** | 규모: **${mag}** | 깊이: **${depth}** | JMA 최대진도: **${maxInt}**`,
+    inline: false,
+  };
+}
 
 export class WebhookNotifier {
   private webhookCooldown = 0;
@@ -17,13 +38,68 @@ export class WebhookNotifier {
     this.lastSentMapGif = null;
   }
 
+  public hasActiveMessage(): boolean {
+    return Boolean(this.lastAlertMessageId && this.lastAlertEmbed);
+  }
+
+  public async patchEewOnActiveWebhook(eew: WolfxServerEEW) {
+    const webhookUrl = process.env.WEBHOOK_URL;
+    if (!webhookUrl || !this.lastAlertMessageId || !this.lastAlertEmbed) return;
+
+    const eewField = buildEewField(eew);
+    if (!eewField) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const otherFields = (this.lastAlertEmbed.fields || []).filter((f: any) => !String(f.name).startsWith('📡'));
+    this.lastAlertEmbed = {
+      ...this.lastAlertEmbed,
+      fields: [...otherFields, eewField],
+    };
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      let res: Response;
+      if (this.lastSentMapGif) {
+        const patchPayload = {
+          embeds: [this.lastAlertEmbed],
+          attachments: [{ id: 0, filename: 'map.gif' }],
+        };
+        const form = new FormData();
+        form.append('payload_json', JSON.stringify(patchPayload));
+        form.append('files[0]', new Blob([new Uint8Array(this.lastSentMapGif)], { type: 'image/gif' }), 'map.gif');
+        res = await fetch(`${webhookUrl}/messages/${this.lastAlertMessageId}`, {
+          method: 'PATCH',
+          body: form,
+          signal: controller.signal,
+        });
+      } else {
+        res = await fetch(`${webhookUrl}/messages/${this.lastAlertMessageId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [this.lastAlertEmbed] }),
+          signal: controller.signal,
+        });
+      }
+      clearTimeout(timeout);
+      if (res.ok) {
+        console.log(`[Webhook] EEW 제${eew.Serial ?? 1}보 반영 완료 (${eew.Hypocenter ?? ''} M${eew.Magunitude ?? '-'})`);
+      } else {
+        console.error(`[Webhook] EEW PATCH 응답 오류: ${res.status} ${res.statusText}`);
+      }
+    } catch (err) {
+      console.error('[Webhook] EEW PATCH 실패:', err);
+    }
+  }
+
   public async triggerWebhook(
     source: string,
     isNewEvent: boolean,
     topStation: TopStationItem | null,
     lastKmoniGif: Buffer | null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    gridFeatures: any[]
+    gridFeatures: any[],
+    eew: WolfxServerEEW | null = null
   ) {
     const webhookUrl = process.env.WEBHOOK_URL;
     if (!webhookUrl) return;
@@ -54,6 +130,7 @@ export class WebhookNotifier {
 
     const colorInt = (r << 16) | (g << 8) | b;
     const sourceStr = source === 'kmoni' ? '강진모니터(K-moni)' : 'Yahoo! 방재속보';
+    const eewField = buildEewField(eew);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const embed: any = {
@@ -67,7 +144,8 @@ export class WebhookNotifier {
           inline: false
         }] : []),
         { name: '예상 최대 진도', value: `**${jindoStr}**`, inline: true },
-        { name: '데이터 소스', value: sourceStr, inline: true }
+        { name: '데이터 소스', value: sourceStr, inline: true },
+        ...(eewField ? [eewField] : []),
       ],
       timestamp: new Date().toISOString()
     };
@@ -120,7 +198,8 @@ export class WebhookNotifier {
   public async sendEventAnimationWebhook(
     frames: BufferedFrame[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    gridFeatures: any[]
+    gridFeatures: any[],
+    eew: WolfxServerEEW | null = null
   ): Promise<{ buf: Buffer; mime: string; frameCount: number } | null> {
     const webhookUrl = process.env.WEBHOOK_URL;
     if (!webhookUrl || frames.length === 0) return null;
@@ -138,6 +217,13 @@ export class WebhookNotifier {
     const firstTime = frames[0].timeStr;
     const lastTime = frames[frames.length - 1].timeStr;
     const durationSec = frames.length;
+    const eewField = buildEewField(eew);
+
+    if (this.lastAlertEmbed && eewField) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const otherFields = (this.lastAlertEmbed.fields || []).filter((f: any) => !String(f.name).startsWith('📡'));
+      this.lastAlertEmbed = { ...this.lastAlertEmbed, fields: [...otherFields, eewField] };
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const reportEmbed: any = {
@@ -146,7 +232,8 @@ export class WebhookNotifier {
       color: 0xef4444,
       fields: [
         { name: '감지 구간', value: `${firstTime} ~ ${lastTime} (JST)`, inline: false },
-        { name: '구간 길이', value: `약 ${durationSec}초`, inline: true }
+        { name: '구간 길이', value: `약 ${durationSec}초`, inline: true },
+        ...(!this.lastAlertEmbed && eewField ? [eewField] : []),
       ],
       timestamp: new Date().toISOString()
     };

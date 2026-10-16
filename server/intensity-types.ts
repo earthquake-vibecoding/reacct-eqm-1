@@ -52,3 +52,19 @@ export interface BufferedFrame {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   grid: any;
 }
+
+export interface WolfxServerEEW {
+  EventID?: string;
+  Serial?: number;
+  Title?: string;
+  OriginTime?: string;
+  Hypocenter?: string;
+  Latitude?: number;
+  Longitude?: number;
+  Magunitude?: number;
+  Depth?: number;
+  MaxIntensity?: string;
+  isCancel?: boolean;
+  isFinal?: boolean;
+  isWarn?: boolean;
+}
