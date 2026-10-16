@@ -47,34 +47,21 @@ export function useEEWWaves({ mapRef, mapLoaded, eewContext, eewServiceRef }: Us
         return;
       }
 
-      // 최종보일 때는 더 이상 파동을 갱신하지 않고 정지된 상태를 유지
-      if (state === EEWState.FINAL) {
-        // 이미 렌더링된 파동은 그대로 유지하되, 애니메이션 루프는 돌지 않음
-        return;
-      }
-
       const now = Date.now();
       const originTs = activeEEW.originTimestamp || now;
       const elapsedSec = Math.max(0, (now - originTs) / 1000);
       const depthKm = Math.max(0, activeEEW.Depth || 10);
-      // const magnitude = activeEEW.Magunitude || 3.5; // [주석처리] 링 소멸 로직 비활성화로 미사용
 
-      // [주석처리] 규모/깊이 기반 최대 도달 거리로 링을 강제로 소멸시키는 로직.
-      // S파만 덩그러니 남는 문제(링이 규모·깊이 감쇠 거리에서 사라짐)로 인해 비활성화함.
-      // 파동은 300초 절대 안전 제한에 도달할 때까지 계속 확장된다.
-      // const maxDistanceKm = getMaxWaveDistanceKm(magnitude, depthKm);
+      if (elapsedSec > 180) {
+        clearWaves();
+        if (eewServiceRef.current) {
+          eewServiceRef.current.clearEEW();
+        }
+        return;
+      }
 
-      let pRadius = getWaveSurfaceRadius(elapsedSec, depthKm, 'P');
-      let sRadius = getWaveSurfaceRadius(elapsedSec, depthKm, 'S');
-
-      // [주석처리] P파가 최대 감쇠 거리를 넘어서면 P파 링 제거 (반경 0 처리)
-      // if (pRadius > maxDistanceKm * 1.15) {
-      //   pRadius = 0;
-      // }
-      // [주석처리] S파가 최대 감쇠 거리를 넘어서면 S파 링 제거
-      // if (sRadius > maxDistanceKm) {
-      //   sRadius = 0;
-      // }
+      const pRadius = getWaveSurfaceRadius(elapsedSec, depthKm, 'P');
+      const sRadius = getWaveSurfaceRadius(elapsedSec, depthKm, 'S');
 
       const center: [number, number] = [activeEEW.Longitude, activeEEW.Latitude];
       const waveGeoJSON = buildWaveGeoJSON(center, pRadius, sRadius);
@@ -116,18 +103,6 @@ export function useEEWWaves({ mapRef, mapLoaded, eewContext, eewServiceRef }: Us
           }
         })()
       });
-
-      // [주석처리] P파와 S파 모두 최대 도달 거리에 도달해 소멸되었는지 검사하는 로직.
-      // 링 강제 소멸을 비활성화했으므로 절대 안전 제한 시간(300초)만으로 종료한다.
-      // const rawSRadius = getWaveSurfaceRadius(elapsedSec, depthKm, 'S');
-      // const isWavesFinished = rawSRadius >= maxDistanceKm;
-
-      if (elapsedSec > 300) {
-        if (eewServiceRef.current) {
-          eewServiceRef.current.clearEEW();
-        }
-        return;
-      }
 
       animFrameId = requestAnimationFrame(updateWaves);
     };

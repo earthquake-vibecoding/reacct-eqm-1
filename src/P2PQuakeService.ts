@@ -260,7 +260,7 @@ export class P2PQuakeService {
 
   public async fetchRecentHistory(notifyFirst = true): Promise<P2PEarthquakeEvent[]> {
     try {
-      const resp = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=30');
+      const resp = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=100');
       if (!resp.ok) {
         return [];
       }
@@ -283,7 +283,7 @@ export class P2PQuakeService {
       if (parsedList.length > 0) {
         const prevTopId = this.latestEvents[0]?.id;
         const newTopId = parsedList[0]?.id;
-        this.latestEvents = parsedList.slice(0, 10);
+        this.latestEvents = parsedList.slice(0, 100);
         if (notifyFirst || prevTopId !== newTopId) {
           this.listeners.forEach((cb) => cb(parsedList[0]));
         }
@@ -338,7 +338,7 @@ export class P2PQuakeService {
           if (data && data.code === 551) {
             const parsed = this.parseCode551(data);
             if (parsed) {
-              this.latestEvents = [parsed, ...this.latestEvents.filter(e => e.eventId !== parsed.eventId)].slice(0, 10);
+              this.latestEvents = [parsed, ...this.latestEvents.filter(e => e.eventId !== parsed.eventId)].slice(0, 100);
               this.listeners.forEach((cb) => cb(parsed));
             }
           }
