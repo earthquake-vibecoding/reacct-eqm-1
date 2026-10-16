@@ -1,8 +1,20 @@
 import { INTENSITY_COLORS } from '../src/colorMap';
 import { TopStationItem } from '../src/QuakeDetectService';
+import { translatePrefecture, translateRegionName } from '../src/translateUtils';
 import { BufferedFrame, WolfxServerEEW } from './intensity-types';
 import { jindoToStr } from './kmoni-pixel';
 import { buildEventAnimationGif, buildEventAnimationMp4, buildSingleMapGif } from './frame-composer';
+
+function formatKoRegion(raw?: string): string {
+  if (!raw) return '알 수 없음';
+  const ko = translateRegionName(raw, 'ko');
+  return ko && ko !== raw ? `${ko} (${raw})` : raw;
+}
+
+function formatKoScale(raw?: string): string {
+  if (!raw) return '-';
+  return raw.replace(/強/g, '강').replace(/弱/g, '약').replace(/\+/g, '강').replace(/-/g, '약');
+}
 
 function buildEewField(eew: WolfxServerEEW | null) {
   if (!eew) return null;
@@ -14,10 +26,10 @@ function buildEewField(eew: WolfxServerEEW | null) {
     };
   }
   const tag = eew.isFinal ? '최종보' : eew.isWarn ? '경보' : '예보';
-  const hypo = eew.Hypocenter || '알 수 없음';
+  const hypo = formatKoRegion(eew.Hypocenter);
   const mag = eew.Magunitude !== undefined ? `M${eew.Magunitude}` : '-';
   const depth = eew.Depth !== undefined ? `${eew.Depth}km` : '-';
-  const maxInt = eew.MaxIntensity || '-';
+  const maxInt = formatKoScale(eew.MaxIntensity);
   return {
     name: `📡 JMA 긴급지진속보 (제${eew.Serial ?? 1}보 · ${tag})`,
     value: `진원지: **${hypo}** | 규모: **${mag}** | 깊이: **${depth}** | JMA 최대진도: **${maxInt}**`,
@@ -131,6 +143,11 @@ export class WebhookNotifier {
     const colorInt = (r << 16) | (g << 8) | b;
     const sourceStr = source === 'kmoni' ? '강진모니터(K-moni)' : 'Yahoo! 방재속보';
     const eewField = buildEewField(eew);
+    const stnRegionKo = topStation ? translatePrefecture(topStation.region, 'ko') : '';
+    const stnNameKo = topStation ? translateRegionName(topStation.name, 'ko') : '';
+    const stnLabel = topStation
+      ? `${stnRegionKo} ${stnNameKo}${stnNameKo !== topStation.name ? ` (${topStation.region} ${topStation.name})` : ''} ${topStation.jindoStr}`
+      : '';
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const embed: any = {
@@ -140,7 +157,7 @@ export class WebhookNotifier {
       fields: [
         ...(topStation ? [{
           name: '감지 격자 관측소',
-          value: `${topStation.region} ${topStation.name} ${topStation.jindoStr}`,
+          value: stnLabel,
           inline: false
         }] : []),
         { name: '예상 최대 진도', value: `**${jindoStr}**`, inline: true },
