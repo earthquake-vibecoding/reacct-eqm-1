@@ -147,7 +147,8 @@ export function connectRealtimeStream(deps: RealtimeStreamDeps) {
   connectSSE();
 
   let isFetching = false;
-  const fetchRealTime = async () => {
+  const fetchRealTime = async (force = false) => {
+    if (!force && eventSource && eventSource.readyState === EventSource.OPEN) return;
     if (isFetching) return;
     isFetching = true;
     try {
@@ -157,16 +158,18 @@ export function connectRealtimeStream(deps: RealtimeStreamDeps) {
     } catch {} finally { isFetching = false; }
   };
 
-  fetchRealTime();
+  fetchRealTime(true);
   const bgService = BackgroundSyncService.getInstance();
-  bgService.registerWorkerInterval('realtime-station-fetch', fetchRealTime, 1500);
+  bgService.registerWorkerInterval('realtime-station-fetch', () => fetchRealTime(false), 1500);
   const unregisterResume = bgService.onTabResume(() => {
-    fetchRealTime();
-    if (!eventSource || eventSource.readyState === EventSource.CLOSED) connectSSE();
+    if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+      fetchRealTime(true);
+      connectSSE();
+    }
   });
 
   return {
-    fetchRealTime,
+    fetchRealTime: () => fetchRealTime(true),
     cleanupStream: () => {
       if (eventSource) { eventSource.close(); eventSource = null; }
       bgService.clearWorkerInterval('realtime-station-fetch');
