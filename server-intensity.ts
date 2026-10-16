@@ -139,7 +139,7 @@ export class ServerIntensityAggregator {
       if (this.isDestroyed || isRunning) return;
       isRunning = true;
       const startTime = Date.now();
-      try { await Promise.allSettled([this.pollKmoni(), this.pollYahoo(), this.pollLmoni()]); }
+      try { await Promise.allSettled([this.pollKmoni(), /* this.pollYahoo(), */ this.pollLmoni()]); }
       finally {
         isRunning = false;
         if (!this.isDestroyed) this.timer = setTimeout(loop, Math.max(50, 1000 - (Date.now() - startTime)));

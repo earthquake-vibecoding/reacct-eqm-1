@@ -1,4 +1,4 @@
-import { StationPointMeta } from './KmoniService';
+import { StationPointMeta } from './types';
 import { dataHealthService } from './dataHealthService';
 
 export interface JMAStationItem {

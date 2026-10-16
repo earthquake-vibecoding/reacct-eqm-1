@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
-import maplibregl from 'https://esm.sh/maplibre-gl@3';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { TopStationItem } from './QuakeDetectService';
 import { WolfxEEWService, WolfxEEWData, EEWContext, EEWState } from './WolfxEEWService';
 import { P2PQuakeService, P2PEarthquakeEvent, P2PObservationPoint } from './P2PQuakeService';
@@ -9,7 +10,7 @@ import { loadJmaTravelTimeTable } from './travelTime';
 import { BackgroundSyncService } from './backgroundSyncService';
 import { DataSourceType, HoverInfo, IGeoProvider, MapRendererController, DetectionAlertInfo, SystemAlertStatus, HistoryEntry } from './types';
 import { StaticGeoProvider, CleanVectorMapRenderer } from './MapRenderer';
-import { JAPAN_BOUNDS, fitJapanBounds } from './zoomUtils';
+import { JAPAN_BOUNDS, fitJapanBounds, fitP2PEventBounds } from './zoomUtils';
 import { useEEWWaves } from './hooks/useEEWWaves';
 import { useEEWFusion, FusionContext } from './hooks/useEEWFusion';
 import { translatePrefecture, translateRegionName, formatObservationPointName } from './translateUtils';
@@ -121,14 +122,8 @@ export default function App() {
 
     if (source === 'p2pquake') {
       const targetEvent = selectedP2PEvent || p2pEvents[0] || (p2pServiceRef.current?.getLatestEvents()[0]);
-      if (targetEvent && targetEvent.hypocenter.latitude !== 0 && targetEvent.hypocenter.longitude !== 0 && mapRef.current) {
-        mapRef.current.flyTo({
-          center: [targetEvent.hypocenter.longitude, targetEvent.hypocenter.latitude],
-          zoom: 7.2,
-          speed: 1.3,
-          curve: 1.2,
-          essential: true
-        });
+      if (targetEvent && mapRef.current) {
+        fitP2PEventBounds(mapRef.current, targetEvent, isMobile);
       }
     } else {
       // kmoni (NIED) or yahoo -> reset camera to full Japan bounds
@@ -198,13 +193,8 @@ export default function App() {
     if (mapControllerRef.current) {
       mapControllerRef.current.setP2PEvent(ev);
     }
-    if (mapRef.current && ev.hypocenter.latitude !== 0 && ev.hypocenter.longitude !== 0) {
-      mapRef.current.flyTo({
-        center: [ev.hypocenter.longitude, ev.hypocenter.latitude],
-        zoom: 6.8,
-        speed: 1.3,
-        essential: true
-      });
+    if (mapRef.current) {
+      fitP2PEventBounds(mapRef.current, ev, isMobile);
     }
   };
 
@@ -339,12 +329,10 @@ export default function App() {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const MapClass = (maplibregl as any).Map || maplibregl;
     const provider: IGeoProvider = new StaticGeoProvider();
     const mapRenderer = new CleanVectorMapRenderer();
 
-    const map = new MapClass({
+    const map = new maplibregl.Map({
       container: containerRef.current,
       bounds: JAPAN_BOUNDS,
       fitBoundsOptions: {

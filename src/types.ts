@@ -2,6 +2,19 @@ import { TopStationItem } from './QuakeDetectService';
 import { WolfxEEWData } from './WolfxEEWService';
 import { P2PEarthquakeEvent } from './P2PQuakeService';
 
+export interface StationPointMeta {
+  Type?: number;
+  Code: string;
+  Name: string;
+  Region: string;
+  IsSuspended?: boolean;
+  Location: { latitude: number; longitude: number };
+  OldLocation?: { latitude: number; longitude: number };
+  Point: { x: number; y: number } | null;
+  ClassificationId?: number | null;
+  PrefectureClassificationId?: number | null;
+}
+
 export type DataSourceType = 'kmoni' | 'yahoo' | 'p2pquake';
 
 export type SourceHealthStatus = 'online' | 'delayed' | 'offline';

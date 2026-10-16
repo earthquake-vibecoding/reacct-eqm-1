@@ -63,6 +63,7 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
           <span className={styles.sourceDot} />
           {t('sources.nied')}
         </button>
+        {/* [미사용] Yahoo! 지진 데이터 소스 비활성화
         <button
           type="button"
           className={`${styles.sourceToggleBtn} ${dataSource === 'yahoo' ? styles.sourceToggleActive : ''}`}
@@ -72,6 +73,7 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
           <span className={styles.sourceDotYahoo} />
           {t('sources.yahoo')}
         </button>
+        */}
         <button
           type="button"
           className={`${styles.sourceToggleBtn} ${dataSource === 'p2pquake' ? styles.sourceToggleActive : ''}`}

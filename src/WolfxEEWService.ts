@@ -153,17 +153,20 @@ export class WolfxEEWService {
             
             const pollLoop = async () => {
               if (isDestroyed) return;
-              try {
-                const url = origin + '/proxy?url=' + encodeURIComponent('https://api.wolfx.jp/jma_eew.json');
-                const resp = await fetch(url, { cache: 'no-store' });
-                if (resp.ok) {
-                  const data = await resp.json();
-                  self.postMessage({ type: 'POLL_DATA', data });
-                }
-              } catch(e) {}
+              // WebSocket이 정상 연결(OPEN = 1)되어 있으면 HTTP 폴링 생략
+              if (!ws || ws.readyState !== 1) {
+                try {
+                  const url = origin + '/proxy?url=' + encodeURIComponent('https://api.wolfx.jp/jma_eew.json');
+                  const resp = await fetch(url, { cache: 'no-store' });
+                  if (resp.ok) {
+                    const data = await resp.json();
+                    self.postMessage({ type: 'POLL_DATA', data });
+                  }
+                } catch(e) {}
+              }
               
               if (!isDestroyed) {
-                pollTimer = setTimeout(pollLoop, 2000);
+                pollTimer = setTimeout(pollLoop, 3000);
               }
             };
             
@@ -257,12 +260,6 @@ export class WolfxEEWService {
 
     // 만약 type이 jma_eew이거나 EEW 필드가 존재할 때
     if (data.Latitude !== undefined && data.Longitude !== undefined && data.OriginTime) {
-      if (data.isCancel) {
-        console.log('[Wolfx EEW] 지진속보 취소 수신:', data);
-        this.machine.transition({ ...data, isCancel: true });
-        return;
-      }
-
       const eventId = data.EventID || `${data.OriginTime}_${data.Hypocenter}`;
       const serial = typeof data.Serial === 'number' ? data.Serial : 1;
 
@@ -274,15 +271,27 @@ export class WolfxEEWService {
 
       // 과거 지진속보 무시 (발생 시각 기준 3분(180초) 이상 지난 데이터는 표시하지 않음)
       if (elapsedSec > 180 || elapsedSec < -60) {
-        // 과거 지진속보인 경우 활성 EEW가 있었다면 해제
         if (currentCtx.state !== EEWState.IDLE && currentCtx.data?.EventID === eventId) {
           this.machine.forceIdle();
         }
         return;
       }
 
-      // 이미 처리된 동일한 보(Serial)이고 내용 변경이 없으면 무시
-      if (this.lastEventId === eventId && this.lastSerial === serial && currentCtx.state !== EEWState.IDLE) {
+      // 이미 처리된 동일한 보(Serial)이고 취소 상태까지 동일하면 무시
+      if (this.lastEventId === eventId && this.lastSerial === serial) {
+        if (data.isCancel && currentCtx.state !== EEWState.IDLE && currentCtx.state !== EEWState.CANCELLED) {
+          console.log('[Wolfx EEW] 지진속보 취소 수신:', data);
+          this.machine.transition({ ...data, isCancel: true });
+        }
+        return;
+      }
+
+      this.lastEventId = eventId;
+      this.lastSerial = serial;
+
+      if (data.isCancel) {
+        console.log('[Wolfx EEW] 지진속보 취소 수신:', data);
+        this.machine.transition({ ...data, isCancel: true });
         return;
       }
 
@@ -293,8 +302,6 @@ export class WolfxEEWService {
         isWarn: data.Title?.includes('警報') || (data.MaxIntensity && ['5弱', '5強', '6弱', '6強', '7'].includes(data.MaxIntensity))
       };
 
-      this.lastEventId = eventId;
-      this.lastSerial = serial;
       this.machine.transition(eew);
       console.log(`[Wolfx EEW] 신규 지진속보 수신: ${eew.Hypocenter} M${eew.Magunitude} (최대진도: ${eew.MaxIntensity}, 깊이: ${eew.Depth}km) 상태: ${this.machine.getContext().state}`);
     }
