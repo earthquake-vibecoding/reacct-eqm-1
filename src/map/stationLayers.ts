@@ -65,8 +65,8 @@ export async function loadAndSetupStationLayers(
     paint: {
       'circle-radius': [
         'interpolate', ['linear'], ['zoom'],
-        4, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['<', ['get', 'intensityCode'], 101], 2.5, 4.5],
-        8, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['<', ['get', 'intensityCode'], 101], 3.5, 6.5]
+        4, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 4.8, 1.8],
+        8, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 6.8, 3.0]
       ],
       'circle-color': ['get', 'color'],
       'circle-opacity': [
@@ -74,21 +74,21 @@ export async function loadAndSetupStationLayers(
         ['<', ['get', 'intensityCode'], 0], 0,
         ['==', ['get', 'color'], 'transparent'], 0,
         ['==', ['get', 'color'], 'rgba(0, 0, 0, 0)'], 0,
-        ['<', ['get', 'intensityCode'], 101], 0.3, 1.0
+        ['boolean', ['get', 'detected'], false], 1.0, 0.3
       ],
       'circle-stroke-width': [
         'case',
         ['<', ['get', 'intensityCode'], 0], 0,
         ['==', ['get', 'color'], 'transparent'], 0,
         ['==', ['get', 'color'], 'rgba(0, 0, 0, 0)'], 0,
-        ['<', ['get', 'intensityCode'], 101], 0, 1.5
+        ['boolean', ['get', 'detected'], false], 1.5, 0
       ],
       'circle-stroke-color': [
         'case',
         ['<', ['get', 'intensityCode'], 0], 'rgba(0, 0, 0, 0)',
         ['==', ['get', 'color'], 'transparent'], 'rgba(0, 0, 0, 0)',
         ['==', ['get', 'color'], 'rgba(0, 0, 0, 0)'], 'rgba(0, 0, 0, 0)',
-        'rgba(255, 255, 255, 0.45)'
+        'rgba(255, 255, 255, 0.5)'
       ]
     }
   });
@@ -113,7 +113,7 @@ export async function loadAndSetupStationLayers(
     }
     map.getCanvas().style.cursor = 'pointer';
     const currentLng = i18n.language;
-    const status = props.intensityCode >= 101
+    const status = props.detected
       ? (currentLng.startsWith('en') ? 'Shaking Detected' : currentLng.startsWith('ja') ? '揺れ検知中' : '지진동 감지중')
       : (currentLng.startsWith('en') ? 'Normal (Minor)' : currentLng.startsWith('ja') ? '平常時 (微震)' : '평시 (미감지)');
     const sourceLabel = getCurrentSource() === 'kmoni'

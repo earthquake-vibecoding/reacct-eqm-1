@@ -98,7 +98,8 @@ export class QuakeDetectService {
           name: fullName,
           code,
           color: initialColor,
-          intensityCode: initialIntensityCode
+          intensityCode: initialIntensityCode,
+          detected: false
         }
       });
     });
@@ -159,7 +160,7 @@ export class QuakeDetectService {
       return {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [lon, lat] },
-        properties: { name: fullName, code, color: getExactJindoColor(-3.0), intensityCode: 100 }
+        properties: { name: fullName, code, color: getExactJindoColor(-3.0), intensityCode: 100, detected: false }
       };
     });
 
@@ -462,6 +463,21 @@ export class QuakeDetectService {
       }
     }
 
+    if (this.checkExpirationTick(Date.now(), callbacks?.onDetectedUpdated, callbacks?.onEventsFinished)) {
+      updated = true;
+    }
+
+    if (this.geojson) {
+      for (const feature of this.geojson.features) {
+        const stn = this.stationsState.get(feature.properties.code);
+        const isDetected = Boolean(stn?.event);
+        if (feature.properties.detected !== isDetected) {
+          feature.properties.detected = isDetected;
+          updated = true;
+        }
+      }
+    }
+
     if (newEventDetected && callbacks?.onNewEventDetected) {
       const newlyTriggered = Array.from(this.stationsState.values()).filter(s => s.event !== null);
       if (newlyTriggered.length > 0) {
@@ -481,8 +497,6 @@ export class QuakeDetectService {
     if (updated && callbacks?.onPointsUpdated) {
       callbacks.onPointsUpdated(this.geojson);
     }
-
-    this.checkExpirationTick(Date.now(), callbacks?.onDetectedUpdated, callbacks?.onEventsFinished);
   }
 
   getTopStations(limit = 5): TopStationItem[] {
@@ -598,7 +612,7 @@ export class QuakeDetectService {
     now: number,
     onGeoJSONUpdated?: (geojson: any) => void,
     onEventsFinished?: () => void
-  ) {
+  ): boolean {
     let expired = false;
     for (const stn of this.stationsState.values()) {
       if (stn.event && stn.expireTime && now >= stn.expireTime) {
@@ -611,5 +625,6 @@ export class QuakeDetectService {
     if (expired) {
       this.updateDetectedEvents(onGeoJSONUpdated, onEventsFinished);
     }
+    return expired;
   }
 }

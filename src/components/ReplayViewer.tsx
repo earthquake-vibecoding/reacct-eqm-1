@@ -62,6 +62,7 @@ export const ReplayViewer: React.FC<ReplayViewerProps> = ({ entry, map, mapContr
     for (const f of features) {
       f.properties.color = 'transparent';
       f.properties.intensityCode = -1;
+      f.properties.detected = false;
     }
     const codeIndex = codeIndexRef.current;
     for (const [code, jindo] of Object.entries(frame.i)) {
@@ -70,6 +71,7 @@ export const ReplayViewer: React.FC<ReplayViewerProps> = ({ entry, map, mapContr
       if (!feature) continue;
       feature.properties.color = getExactJindoColor(jindo);
       feature.properties.intensityCode = Math.round((jindo + 3.0) * 2 + 100);
+      feature.properties.detected = jindo >= -0.5;
     }
 
     // 지도 소스에 직접 반영 (리플레이 모드라 실시간 업데이트는 차단된 상태)
