@@ -14,3 +14,51 @@ body,
   background-color: #ffffff;
   overflow: hidden;
 }
+
+/* ── 내 위치 마커 (src/map/userLocation.ts가 생성하는 비(非)React DOM) ── */
+/* 루트가 점 크기(12x12)라 Marker 앵커 중심 = 점 중심. 칩은 점 위에 띄움 */
+.eqm-user-marker {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.eqm-user-dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);
+}
+
+.eqm-user-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.35);
+  animation: eqm-user-pulse 2s ease-out infinite;
+}
+
+@keyframes eqm-user-pulse {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.eqm-user-chip {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1.5px solid #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  /* 점/마커는 지도 클릭을 막지 않지만, 칩만은 title 툴팁 호버를 위해 이벤트 받음 */
+  pointer-events: auto;
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../types';
 import styles from '../App.module.css';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff, PaintBucket } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff, PaintBucket, MapPin } from 'lucide-react';
 import { audioService } from '../AudioService';
 
 interface TopRightControlsProps {
@@ -17,6 +17,8 @@ interface TopRightControlsProps {
   onToggleEstimateFill: () => void;
   // 아카이브 이벤트 등 추정 채우기가 의미 있는 컨텍스트에서만 툴팁 버튼 노출
   showEstimateControl: boolean;
+  showMyLocation: boolean;
+  onToggleMyLocation: () => void;
 }
 
 export const TopRightControls: React.FC<TopRightControlsProps> = ({
@@ -30,6 +32,8 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
   estimateFill,
   onToggleEstimateFill,
   showEstimateControl,
+  showMyLocation,
+  onToggleMyLocation,
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -151,6 +155,16 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
             <PaintBucket size={16} />
           </button>
         )}
+        <button
+          type="button"
+          className={styles.iconBtn}
+          onClick={onToggleMyLocation}
+          data-tip={showMyLocation ? t('controls.hideMyLocation') : t('controls.showMyLocation')}
+          aria-label={showMyLocation ? t('controls.hideMyLocation') : t('controls.showMyLocation')}
+          style={{ opacity: showMyLocation ? 1 : 0.45 }}
+        >
+          <MapPin size={16} />
+        </button>
         <button type="button" className={styles.iconBtn} onClick={handleResetCamera} data-tip={t('controls.resetCamera')} aria-label={t('controls.resetCamera')}>
           <LocateFixed size={16} />
         </button>

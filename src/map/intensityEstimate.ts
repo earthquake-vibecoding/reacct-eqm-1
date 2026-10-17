@@ -45,9 +45,24 @@ function distKm(a: [number, number], b: [number, number]): number {
 }
 
 // 진도가 느껴질 대략적 반경(km). M이 클수록 넓고, M 미상이면 보수적으로 100km
-function feltRadiusKm(mag: number): number {
+export function feltRadiusKm(mag: number): number {
   if (!(mag > 0)) return 100;
   return Math.min(400, 30 * Math.pow(2, mag - 4));
+}
+
+// center 지점의 IDW 가중평균. 반경 밖이면 null. 스케일 도메인(10/20/...)과
+// 계측진도 도메인(소수) 양쪽에서 재사용하는 공용 코어.
+export function idwEstimate(center: [number, number], points: EstimatePoint[], radiusKm: number): number | null {
+  let wSum = 0;
+  let vSum = 0;
+  for (const p of points) {
+    const d = distKm(center, [p.lon, p.lat]);
+    if (d > radiusKm) continue;
+    const w = 1 / (Math.max(d, 1) * Math.max(d, 1));
+    wSum += w;
+    vSum += w * p.scale;
+  }
+  return wSum === 0 ? null : vSum / wSum;
 }
 
 // 구역 대표점 기준 IDW 추정값. 진도1 미만으로 떨어지면 0(미표시) 반환.
@@ -55,17 +70,8 @@ function feltRadiusKm(mag: number): number {
 export function estimateAreaScale(feature: any, points: EstimatePoint[], mag: number): number {
   const c = featureCenter(feature);
   if (!c) return 0;
-  const radius = feltRadiusKm(mag);
-  let wSum = 0;
-  let vSum = 0;
-  for (const p of points) {
-    const d = distKm(c, [p.lon, p.lat]);
-    if (d > radius) continue;
-    const w = 1 / (Math.max(d, 1) * Math.max(d, 1));
-    wSum += w;
-    vSum += w * p.scale;
-  }
-  if (wSum === 0) return 0;
-  const snapped = Math.round(vSum / wSum / 10) * 10;
+  const raw = idwEstimate(c, points, feltRadiusKm(mag));
+  if (raw === null) return 0;
+  const snapped = Math.round(raw / 10) * 10;
   return snapped >= 10 ? Math.min(snapped, 70) : 0;
 }

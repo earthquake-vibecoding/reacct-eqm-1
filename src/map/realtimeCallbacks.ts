@@ -6,6 +6,7 @@ import { fitJapanBounds } from '../zoomUtils';
 import { dataHealthService } from '../dataHealthService';
 import { formatJSTClock } from '../utils';
 import { updateLpPointsOnMap } from './stationLayers';
+import { refreshUserLocation } from './userLocation';
 
 export interface RealtimeStreamDeps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,8 @@ export function createDetectionCallbacks(sourceType: DataSourceType, deps: Realt
       const source = map.getSource('intensity-points');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (source) (source as any).setData(updatedGeojson);
+      // 내 위치 마커가 켜져 있으면 실시간 관측값 기준 추정 진도 칩도 갱신
+      refreshUserLocation(map, updatedGeojson);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onDetectedUpdated: (detectedGeojson: any) => {

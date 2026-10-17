@@ -8,6 +8,56 @@ function localizeScale(scaleStr: string, lng: string): string {
   return scaleStr;
 }
 
+// 추정 구역 라벨 이미지. 스타일에 glyphs가 없어 텍스트 심볼을 못 쓰므로
+// canvas로 현지화 텍스트("추정"/"est."/"推定")를 그려 아이콘 이미지로 등록한다.
+function lngKey(lng: string): 'ko' | 'en' | 'ja' {
+  return lng.startsWith('en') ? 'en' : lng.startsWith('ja') ? 'ja' : 'ko';
+}
+
+const ESTIMATE_LABEL_TEXT: Record<'ko' | 'en' | 'ja', string> = { ko: '추정', en: 'est.', ja: '推定' };
+
+function makeEstimatedImage(key: 'ko' | 'en' | 'ja'):
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any | null {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const dpr = 2;
+  const fontSize = 11;
+  const font = `600 ${fontSize}px "Apple SD Gothic Neo", "Hiragino Sans", "Noto Sans KR", sans-serif`;
+  ctx.font = font;
+  const text = ESTIMATE_LABEL_TEXT[key];
+  const w = Math.ceil(ctx.measureText(text).width) + 12;
+  const h = fontSize + 9;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  const r = 4;
+  ctx.beginPath();
+  ctx.moveTo(1 + r, 1);
+  ctx.arcTo(w - 1, 1, w - 1, h - 1, r);
+  ctx.arcTo(w - 1, h - 1, 1, h - 1, r);
+  ctx.arcTo(1, h - 1, 1, 1, r);
+  ctx.arcTo(1, 1, w - 1, 1, r);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.fill();
+  // 범례의 점선 테두리 스와치와 동일한 어감
+  ctx.setLineDash([2.5, 2]);
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.8)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font = font;
+  ctx.fillStyle = '#e2e8f0';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, w / 2, h / 2 + 0.5);
+  // maplibre addImage 규격: width*height*4 == data.length. device 픽셀 크기와 raw RGBA 배열 필요
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return { width: canvas.width, height: canvas.height, data: imgData.data };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null) => void) {
   map.addSource('p2p-hypocenter', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
@@ -22,6 +72,27 @@ export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null)
   map.addLayer({
     id: 'p2p-areas-line', type: 'line', source: 'p2p-areas', layout: { visibility: 'none' },
     paint: { 'line-color': ['get', 'stroke'], 'line-width': 1.2, 'line-opacity': ['case', ['!=', ['get', 'color'], 'transparent'], 0.8, 0] }
+  });
+
+  // 추정(보간) 채움 구역 라벨. 겹침 허용 안 함 -> 조밀한 구역은 자동 생략
+  const estKey = lngKey(i18n.language);
+  for (const key of ['ko', 'en', 'ja'] as const) {
+    const img = makeEstimatedImage(key);
+    if (img && !map.hasImage(`est-${key}`)) map.addImage(`est-${key}`, img, { pixelRatio: 2 });
+  }
+  map.addLayer({
+    id: 'p2p-estimated-label', type: 'symbol', source: 'p2p-areas', filter: ['has', 'estimated'],
+    layout: {
+      visibility: 'none', 'icon-allow-overlap': false, 'icon-image': `est-${estKey}`, 'icon-padding': 16,
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 4, 0.6, 7, 1]
+    },
+    paint: { 'icon-opacity': 0.95 }
+  });
+  i18n.off('languageChanged');
+  i18n.on('languageChanged', (lng: string) => {
+    if (map.getLayer('p2p-estimated-label')) {
+      map.setLayoutProperty('p2p-estimated-label', 'icon-image', `est-${lngKey(lng)}`);
+    }
   });
   map.addLayer({
     id: 'p2p-points-layer', type: 'circle', source: 'p2p-points', layout: { visibility: 'none' },

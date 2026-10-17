@@ -8,7 +8,7 @@ import { estimateAreaScale } from './intensityEstimate';
 const ESTIMATE_TONE = '#94a3b8';
 
 const P2P_LAYER_IDS = [
-  'p2p-areas-fill', 'p2p-areas-line', 'p2p-points-layer',
+  'p2p-areas-fill', 'p2p-areas-line', 'p2p-estimated-label', 'p2p-points-layer',
   'p2p-hypocenter-glow', 'p2p-hypocenter-center',
 ];
 

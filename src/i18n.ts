@@ -28,6 +28,8 @@ export const resources = {
         showP2pPoints: 'P2P 관측점 표시',
         hideP2pPoints: 'P2P 관측점 숨기기',
         estimateFill: '진도 추정 채우기 (보간)',
+        showMyLocation: '내 위치 진도 표시',
+        hideMyLocation: '내 위치 진도 숨기기',
       },
       dashboard: {
         title: '실시간 최대 진도 관측소',
@@ -211,6 +213,8 @@ export const resources = {
         showP2pPoints: 'Show P2P points',
         hideP2pPoints: 'Hide P2P points',
         estimateFill: 'Interpolated intensity fill',
+        showMyLocation: 'Show my location intensity',
+        hideMyLocation: 'Hide my location intensity',
       },
       dashboard: {
         title: 'Real-time Max Intensity Stations',
@@ -394,6 +398,8 @@ export const resources = {
         showP2pPoints: 'P2P 観測点を表示',
         hideP2pPoints: 'P2P 観測点を隠す',
         estimateFill: '震度推定補間',
+        showMyLocation: '現在地の震度を表示',
+        hideMyLocation: '現在地の震度を隠す',
       },
       dashboard: {
         title: 'リアルタイム最大震度観測点',
