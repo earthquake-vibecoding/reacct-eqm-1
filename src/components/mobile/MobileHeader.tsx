@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../../types';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon, MoreHorizontal, X, Globe } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, MoreHorizontal, X, Globe, Eye, EyeOff } from 'lucide-react';
 import { audioService } from '../../AudioService';
 import styles from './MobileView.module.css';
 
@@ -11,6 +11,8 @@ interface MobileHeaderProps {
   handleResetCamera: () => void;
   isDarkMode: boolean;
   setIsDarkMode: (v: boolean) => void;
+  showStations: boolean;
+  onToggleStations: () => void;
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -19,6 +21,8 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   handleResetCamera,
   isDarkMode,
   setIsDarkMode,
+  showStations,
+  onToggleStations,
 }) => {
   const { t, i18n } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
@@ -180,6 +184,18 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               >
                 <span>{isDarkMode ? t('controls.lightMode') : t('controls.darkMode')}</span>
                 {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            </div>
+
+            <div>
+              <div className={styles.settingsSectionTitle}>P2P 관측점 표시</div>
+              <button
+                type="button"
+                className={styles.settingsRowBtn}
+                onClick={onToggleStations}
+              >
+                <span>{showStations ? 'P2P 관측점 숨기기' : 'P2P 관측점 표시'}</span>
+                {showStations ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { P2PEarthquakeEvent, P2PObservationPoint } from '../P2PQuakeService';
 import { translateRegionName, translatePrefecture } from '../translateUtils';
+import { getScaleTextColor } from '../utils';
 import styles from '../App.module.css';
 
 interface P2PQuakeCardProps {
@@ -13,6 +14,7 @@ interface P2PQuakeCardProps {
   isCollapsed: boolean;
   setIsCollapsed: (v: boolean) => void;
   listOnly?: boolean;
+  onOpenArchive?: () => void;
 }
 
 export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
@@ -24,6 +26,7 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
   isCollapsed,
   setIsCollapsed,
   listOnly = false,
+  onOpenArchive,
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
@@ -93,7 +96,7 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
         </span>
         <span
           className={styles.p2pScaleBadge}
-          style={{ backgroundColor: currentEvent.maxScaleColor }}
+          style={{ backgroundColor: currentEvent.maxScaleColor, color: getScaleTextColor(currentEvent.maxScaleColor) }}
         >
           {t('p2p.scale', { scale: formattedMaxScale })}
         </span>
@@ -143,8 +146,20 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
       {/* Recent History (Simple Horizontal List) */}
       {(historyEvents.length > 1 || listOnly) && (
         <div className={styles.p2pHistoryList}>
-          <div className={styles.p2pHistoryLabel}>
-            {currentLang.startsWith('en') ? 'Recent:' : currentLang.startsWith('ja') ? '最近の履歴:' : '최근 이력:'}
+          <div className={styles.p2pHistoryLabelRow}>
+            <div className={styles.p2pHistoryLabel}>
+              {currentLang.startsWith('en') ? 'Recent:' : currentLang.startsWith('ja') ? '最近の履歴:' : '최근 이력:'}
+            </div>
+            {onOpenArchive && (
+              <button
+                type="button"
+                className={styles.p2pArchiveBtn}
+                onClick={onOpenArchive}
+                title={currentLang.startsWith('en') ? 'JMA intensity archive (since 1919)' : currentLang.startsWith('ja') ? 'JMA 震度DBアーカイブ (1919年~)' : 'JMA 진도 DB 아카이브 (1919년~)'}
+              >
+                {currentLang.startsWith('en') ? 'Archive' : currentLang.startsWith('ja') ? '過去検索' : '옛날 지진'}
+              </button>
+            )}
           </div>
           <div className={styles.p2pHistoryScroll}>
             {historyEvents.map((h) => {
@@ -157,7 +172,10 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
                   className={`${styles.p2pHistoryItem} ${isSelected ? styles.p2pHistoryItemSelected : ''}`}
                   onClick={() => onSelectEvent(h)}
                 >
-                  <span className={styles.p2pHistoryItemScale} style={{ backgroundColor: h.maxScaleColor }}>
+                  <span
+                    className={styles.p2pHistoryItemScale}
+                    style={{ backgroundColor: h.maxScaleColor, color: getScaleTextColor(h.maxScaleColor) }}
+                  >
                     {hScale}
                   </span>
                   <div className={styles.p2pHistoryItemInfo}>
@@ -193,7 +211,7 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
             <div className={styles.p2pMaxScaleLabel}>{t('p2p.maxIntensity')}</div>
             <div
               className={styles.p2pMaxScaleValue}
-              style={{ backgroundColor: currentEvent.maxScaleColor }}
+              style={{ backgroundColor: currentEvent.maxScaleColor, color: getScaleTextColor(currentEvent.maxScaleColor) }}
             >
               {formattedMaxScale}
             </div>

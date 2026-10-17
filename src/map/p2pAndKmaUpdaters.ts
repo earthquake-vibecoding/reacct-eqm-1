@@ -1,5 +1,6 @@
 import { DataSourceType } from '../types';
 import { P2PEarthquakeEvent, formatScaleJMA } from '../P2PQuakeService';
+import { getScaleStrokeColor } from '../utils';
 import { findAreaFeature } from './geoMatch';
 
 const P2P_LAYER_IDS = [
@@ -56,7 +57,7 @@ export function updateP2PEventOnMap(
   const pointFeatures = event.points.map((pt) => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [pt.lon, pt.lat] },
-    properties: { pref: pt.pref, name: pt.name, scale: pt.scale, scaleStr: pt.scaleStr, color: pt.color }
+    properties: { pref: pt.pref, name: pt.name, scale: pt.scale, scaleStr: pt.scaleStr, color: pt.color, stroke: getScaleStrokeColor(pt.color) }
   }));
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (pointsSource) (pointsSource as any).setData({ type: 'FeatureCollection', features: pointFeatures });
@@ -121,7 +122,7 @@ export function updateP2PEventOnMap(
           type: 'Feature', geometry: f.geometry,
           properties: {
             code: f.properties?.code, name: f.properties?.name, namekana: f.properties?.namekana,
-            scale, scaleStr: scaleInfo.text, color: scaleInfo.color, opacity: isEarthquakeTab ? 0.85 : 0.75
+            scale, scaleStr: scaleInfo.text, color: scaleInfo.color, stroke: getScaleStrokeColor(scaleInfo.color), opacity: isEarthquakeTab ? 0.85 : 0.75
           }
         };
       }
@@ -129,7 +130,7 @@ export function updateP2PEventOnMap(
         type: 'Feature', geometry: f.geometry,
         properties: {
           code: f.properties?.code, name: f.properties?.name, namekana: f.properties?.namekana,
-          scale: 0, scaleStr: '', color: 'transparent', opacity: 0
+          scale: 0, scaleStr: '', color: 'transparent', stroke: '#ffffff', opacity: 0
         }
       };
     });

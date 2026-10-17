@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { ServerIntensityAggregator } from "./server-intensity";
+import { registerJmaHistoryRoutes } from "./server/jma-history";
 
 export function createApp() {
   const app = express();
@@ -269,6 +270,9 @@ export function createApp() {
     }
     res.sendFile(filePath);
   });
+
+  // 7. JMA 진도 DB 아카이브 검색 (1919년~현재)
+  registerJmaHistoryRoutes(app);
 
   app.use('/api', (req, res) => {
     res.status(404).json({ error: "Not found" });

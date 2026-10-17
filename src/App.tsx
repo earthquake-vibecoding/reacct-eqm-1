@@ -24,6 +24,7 @@ import { InfoBadge } from './components/InfoBadge';
 import { P2PQuakeCard } from './components/P2PQuakeCard';
 import { HistoryCard } from './components/HistoryCard';
 import { ReplayViewer } from './components/ReplayViewer';
+import { JmaHistoryPanel } from './components/JmaHistoryPanel';
 import { DataDelayBadge } from './components/DataDelayBadge';
 import { LpBadge } from './components/LpBadge';
 
@@ -49,6 +50,11 @@ export default function App() {
   const [dataSource, setDataSource] = useState<DataSourceType>('kmoni');
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  // P2P 지진 관측점 표시 토글 (localStorage 유지)
+  const [showStations, setShowStations] = useState<boolean>(() => {
+    if (typeof localStorage === 'undefined') return true;
+    return localStorage.getItem('eqm-show-stations') !== 'false';
+  });
   const [mapLoaded, setMapLoaded] = useState(false);
   const [eewContext, setEewContext] = useState<EEWContext>({ state: EEWState.IDLE, data: null });
   const [topStations, setTopStations] = useState<TopStationItem[]>([]);
@@ -79,6 +85,7 @@ export default function App() {
   // P2PQuake 551 States
   const [p2pEvents, setP2PEvents] = useState<P2PEarthquakeEvent[]>([]);
   const [selectedP2PEvent, setSelectedP2PEvent] = useState<P2PEarthquakeEvent | null>(null);
+  const [jmaArchiveOpen, setJmaArchiveOpen] = useState(false);
   const [isP2PCollapsed, setIsP2PCollapsed] = useState(false);
 
   // P/S파 실시간 전파 계산 훅
@@ -411,8 +418,7 @@ export default function App() {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    const bgColor = isDarkMode ? '#0f172a' : '#f1f5f9';
-    const worldFill = isDarkMode ? '#1e293b' : '#e2e8f0';
+    const bgColor = isDarkMode ? '#0f172a' : '#f1f5f9';    const worldFill = isDarkMode ? '#1e293b' : '#e2e8f0';
     const worldLine = isDarkMode ? '#334155' : '#cbd5e1';
     const japanFill = isDarkMode ? '#334155' : '#ffffff';
     const japanLine = isDarkMode ? '#0f172a' : '#94a3b8';
@@ -427,6 +433,30 @@ export default function App() {
       console.warn('Failed to update map style for dark mode', e);
     }
   }, [isDarkMode, mapLoaded]);
+
+  // 3-1. P2P 지진 관측점 표시 토글
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    const visibility = showStations ? 'visible' : 'none';
+    try {
+      if (map.getLayer('p2p-points-layer')) {
+        map.setLayoutProperty('p2p-points-layer', 'visibility', visibility);
+      }
+    } catch (e) {
+      console.warn('Failed to toggle station layer visibility', e);
+    }
+  }, [showStations, mapLoaded]);
+
+  const handleToggleStations = () => {
+    setShowStations((prev) => {
+      const next = !prev;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('eqm-show-stations', String(next));
+      }
+      return next;
+    });
+  };
 
   return (
     <div className={`${styles.container} ${isDarkMode ? styles.dark : ''}`}>
@@ -443,6 +473,8 @@ export default function App() {
             handleResetCamera={handleResetCamera}
             isDarkMode={isDarkMode}
             setIsDarkMode={setIsDarkMode}
+            showStations={showStations}
+            onToggleStations={handleToggleStations}
           />
 
           <MobileAlerts
@@ -479,6 +511,7 @@ export default function App() {
                 ? `${detectionAlert.location} 지진동 감지 (${detectionAlert.expectedIntensity})`
                 : undefined
             }
+            onOpenArchive={() => setJmaArchiveOpen(true)}
           />
         </div>
       ) : (
@@ -489,6 +522,8 @@ export default function App() {
             handleResetCamera={handleResetCamera}
             isDarkMode={isDarkMode}
             setIsDarkMode={setIsDarkMode}
+            showStations={showStations}
+            onToggleStations={handleToggleStations}
           />
 
           <div className={styles.leftSidebar}>
@@ -515,8 +550,10 @@ export default function App() {
               isCollapsed={isP2PCollapsed}
               setIsCollapsed={setIsP2PCollapsed}
               listOnly={dataSource !== 'p2pquake'}
+              onOpenArchive={() => setJmaArchiveOpen(true)}
             />
 
+            {/* [비활성화] 실시간 진도 TOP 5 (NIED)
             {dataSource !== 'p2pquake' && (
               <TopDashboard
                 isTopCollapsed={isTopCollapsed}
@@ -526,6 +563,7 @@ export default function App() {
                 handleSelectStation={handleSelectStation}
               />
             )}
+            */}
 
             <HistoryCard onFocusEpicenter={handleFocusEpicenter} onReplay={handleOpenReplay} />
           </div>
@@ -544,6 +582,12 @@ export default function App() {
           onClose={handleCloseReplay}
         />
       )}
+
+      <JmaHistoryPanel
+        open={jmaArchiveOpen}
+        onClose={() => setJmaArchiveOpen(false)}
+        onSelect={handleSelectP2PEvent}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { StationPointMeta } from './types';
 import { dataHealthService } from './dataHealthService';
+import { getScaleTextColor } from './utils';
 
 export interface JMAStationItem {
   area?: { code?: string; name?: string; furigana?: string };
@@ -48,30 +49,32 @@ export interface P2PEarthquakeEvent {
 }
 
 export function formatScaleJMA(scale: number): { text: string; color: string; textColor: string } {
+  // 일본 기상청(JMA) 표준 컬러 유니버설 디자인(CUD) 진도 배색
+  // 출처: 기상청 색채 지침(HPColorGuide_202007) 표2-2
   switch (scale) {
     case 10:
-      return { text: '1', color: '#60a5fa', textColor: '#ffffff' };
+      return { text: '1', color: '#F2F2FF', textColor: getScaleTextColor('#F2F2FF') };
     case 20:
-      return { text: '2', color: '#2563eb', textColor: '#ffffff' };
+      return { text: '2', color: '#00AAFF', textColor: getScaleTextColor('#00AAFF') };
     case 30:
-      return { text: '3', color: '#16a34a', textColor: '#ffffff' };
+      return { text: '3', color: '#0041FF', textColor: getScaleTextColor('#0041FF') };
     case 40:
-      return { text: '4', color: '#eab308', textColor: '#000000' };
+      return { text: '4', color: '#FAE696', textColor: getScaleTextColor('#FAE696') };
     case 45:
-      return { text: '5약', color: '#f97316', textColor: '#ffffff' };
+      return { text: '5약', color: '#FFE600', textColor: getScaleTextColor('#FFE600') };
     case 50:
-      return { text: '5강', color: '#ea580c', textColor: '#ffffff' };
+      return { text: '5강', color: '#FF9900', textColor: getScaleTextColor('#FF9900') };
     case 55:
-      return { text: '6약', color: '#dc2626', textColor: '#ffffff' };
+      return { text: '6약', color: '#FF2800', textColor: getScaleTextColor('#FF2800') };
     case 60:
-      return { text: '6강', color: '#991b1b', textColor: '#ffffff' };
+      return { text: '6강', color: '#A50021', textColor: getScaleTextColor('#A50021') };
     case 70:
-      return { text: '7', color: '#7e22ce', textColor: '#ffffff' };
+      return { text: '7', color: '#B40068', textColor: getScaleTextColor('#B40068') };
     default:
       if (scale > 0 && scale < 10) {
-        return { text: '1미만', color: '#94a3b8', textColor: '#ffffff' };
+        return { text: '1미만', color: '#94a3b8', textColor: getScaleTextColor('#94a3b8') };
       }
-      return { text: '-', color: '#64748b', textColor: '#ffffff' };
+      return { text: '-', color: '#64748b', textColor: getScaleTextColor('#64748b') };
   }
 }
 

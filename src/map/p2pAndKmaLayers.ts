@@ -21,7 +21,7 @@ export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null)
   });
   map.addLayer({
     id: 'p2p-areas-line', type: 'line', source: 'p2p-areas', layout: { visibility: 'none' },
-    paint: { 'line-color': '#ffffff', 'line-width': 1.2, 'line-opacity': ['case', ['!=', ['get', 'color'], 'transparent'], 0.8, 0] }
+    paint: { 'line-color': ['get', 'stroke'], 'line-width': 1.2, 'line-opacity': ['case', ['!=', ['get', 'color'], 'transparent'], 0.8, 0] }
   });
   map.addLayer({
     id: 'p2p-points-layer', type: 'circle', source: 'p2p-points', layout: { visibility: 'none' },
@@ -32,7 +32,7 @@ export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null)
         7, ['interpolate', ['linear'], ['get', 'scale'], 10, 6, 30, 8, 50, 11, 70, 15],
         10, ['interpolate', ['linear'], ['get', 'scale'], 10, 8, 30, 12, 50, 16, 70, 22]
       ],
-      'circle-color': ['get', 'color'], 'circle-opacity': 0.9, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff'
+      'circle-color': ['get', 'color'], 'circle-opacity': 0.9, 'circle-stroke-width': 1.5, 'circle-stroke-color': ['get', 'stroke']
     }
   });
   map.addLayer({
