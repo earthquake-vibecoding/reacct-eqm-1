@@ -11,6 +11,7 @@ import { BackgroundSyncService } from './backgroundSyncService';
 import { DataSourceType, HoverInfo, IGeoProvider, MapRendererController, DetectionAlertInfo, SystemAlertStatus, HistoryEntry } from './types';
 import { StaticGeoProvider, CleanVectorMapRenderer } from './MapRenderer';
 import { JAPAN_BOUNDS, fitJapanBounds, fitP2PEventBounds } from './zoomUtils';
+import { configureUserLocation, refreshUserLocation, setUserLocationEnabled } from './map/userLocation';
 import { useEEWWaves } from './hooks/useEEWWaves';
 import { useEEWFusion, FusionContext } from './hooks/useEEWFusion';
 import { translatePrefecture, translateRegionName, formatObservationPointName } from './translateUtils';
@@ -62,6 +63,11 @@ export default function App() {
   });
   const estimateFillRef = useRef(estimateFill);
   estimateFillRef.current = estimateFill;
+  // 내 위치 마커 + 추정 진도 칩 토글 (localStorage 유지, 권한 문제로 기본 꺼짐)
+  const [showMyLocation, setShowMyLocation] = useState<boolean>(() => {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('eqm-show-location') === 'true';
+  });
   const [mapLoaded, setMapLoaded] = useState(false);
   const [eewContext, setEewContext] = useState<EEWContext>({ state: EEWState.IDLE, data: null });
   const [topStations, setTopStations] = useState<TopStationItem[]>([]);
@@ -107,6 +113,8 @@ export default function App() {
 
   const dataSourceRef = useRef<DataSourceType>(dataSource);
   dataSourceRef.current = dataSource;
+  const selectedP2PEventRef = useRef<P2PEarthquakeEvent | null>(selectedP2PEvent);
+  selectedP2PEventRef.current = selectedP2PEvent;
 
 
   useEffect(() => {
@@ -475,6 +483,38 @@ export default function App() {
     });
   };
 
+  // 3-2. 내 위치 마커: 모듈에 최신 상태 접근자를 건네고 토글/데이터 변경에 갱신
+  useEffect(() => {
+    configureUserLocation({
+      getLng: () => i18n.language,
+      getEvent: () => selectedP2PEventRef.current,
+      getSource: () => dataSourceRef.current,
+      // 권한 거부 등으로 좌표를 못 받으면 토글을 조용히 되돌림
+      onError: () => setShowMyLocation(false),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    setUserLocationEnabled(mapRef.current, showMyLocation);
+  }, [showMyLocation, mapLoaded]);
+
+  useEffect(() => {
+    if (mapLoaded && mapRef.current) {
+      refreshUserLocation(mapRef.current);
+    }
+  }, [selectedP2PEvent, dataSource, i18n.language, mapLoaded]);
+
+  const handleToggleMyLocation = () => {
+    setShowMyLocation((prev) => {
+      const next = !prev;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('eqm-show-location', String(next));
+      }
+      return next;
+    });
+  };
+
   return (
     <div className={`${styles.container} ${isDarkMode ? styles.dark : ''}`}>
       <div ref={containerRef} className={styles.map} />
@@ -495,6 +535,8 @@ export default function App() {
             estimateFill={estimateFill}
             onToggleEstimateFill={handleToggleEstimateFill}
             showEstimateControl={selectedP2PEvent?.issueType === 'JmaArchive'}
+            showMyLocation={showMyLocation}
+            onToggleMyLocation={handleToggleMyLocation}
           />
 
           <MobileAlerts
@@ -547,6 +589,8 @@ export default function App() {
             estimateFill={estimateFill}
             onToggleEstimateFill={handleToggleEstimateFill}
             showEstimateControl={selectedP2PEvent?.issueType === 'JmaArchive'}
+            showMyLocation={showMyLocation}
+            onToggleMyLocation={handleToggleMyLocation}
           />
 
           <div className={styles.leftSidebar}>
