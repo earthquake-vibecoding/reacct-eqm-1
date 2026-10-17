@@ -153,8 +153,11 @@ export class WolfxEEWService {
             
             const pollLoop = async () => {
               if (isDestroyed) return;
-              // WebSocket이 정상 연결(OPEN = 1)되어 있으면 HTTP 폴링 생략
-              if (!ws || ws.readyState !== 1) {
+              // WebSocket이 정상 연결(OPEN = 1)되어 있으면 ping 전송 및 생존 보고만 수행하고 HTTP 폴링 생략
+              if (ws && ws.readyState === 1) {
+                try { ws.send('ping'); } catch(e) {}
+                self.postMessage({ type: 'WS_ALIVE' });
+              } else {
                 try {
                   const url = origin + '/proxy?url=' + encodeURIComponent('https://api.wolfx.jp/jma_eew.json');
                   const resp = await fetch(url, { cache: 'no-store' });
@@ -166,7 +169,7 @@ export class WolfxEEWService {
               }
               
               if (!isDestroyed) {
-                pollTimer = setTimeout(pollLoop, 3000);
+                pollTimer = setTimeout(pollLoop, 10000);
               }
             };
             
@@ -187,7 +190,7 @@ export class WolfxEEWService {
       
       this.worker.onmessage = (e) => {
         const { type, data } = e.data;
-        if (type === 'WS_OPEN') {
+        if (type === 'WS_OPEN' || type === 'WS_ALIVE') {
           dataHealthService.report('wolfx', {
             status: 'online',
             detail: 'WebSocket 연결됨',

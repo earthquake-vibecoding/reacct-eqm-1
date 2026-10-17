@@ -50,15 +50,15 @@ export const Legend: React.FC<LegendProps> = ({ dataSource }) => {
             <>
               <div className={styles.legendTitle}>{t('legend.jmaScale')}</div>
               <div className={styles.legendScaleGrid}>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#7e22ce' }}>7</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#991b1b' }}>{getScaleLabel('6강')}</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#dc2626' }}>{getScaleLabel('6약')}</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#ea580c' }}>{getScaleLabel('5강')}</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#f97316' }}>{getScaleLabel('5약')}</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#eab308', color: '#000' }}>4</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#16a34a' }}>3</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#2563eb' }}>2</span>
-                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#60a5fa' }}>1</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#B40068' }}>7</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#A50021' }}>{getScaleLabel('6강')}</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#FF2800' }}>{getScaleLabel('6약')}</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#FF9900', color: '#000' }}>{getScaleLabel('5강')}</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#FFE600', color: '#000' }}>{getScaleLabel('5약')}</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#FAE696', color: '#000' }}>4</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#0041FF' }}>3</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#00AAFF', color: '#000' }}>2</span>
+                <span className={styles.scaleBadgeLegend} style={{ backgroundColor: '#F2F2FF', color: '#000' }}>1</span>
               </div>
               <div className={styles.legendItem}>
                 <span className={styles.colorEpicenter}>✕</span> {t('legend.epicenter')}

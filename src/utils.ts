@@ -56,6 +56,30 @@ export function getJindoDetailedName(jindo: number | null): string {
   return "진도 7";
 }
 
+/**
+ * 배경색 명도에 따라 가독성 높은 글자색(검정/흰색)을 반환한다.
+ * WCAG 상대 휘도 기준. 진도 배지 등 밝은 배경 위 흰 글자 방지용.
+ */
+function relLuminance(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+export function getScaleTextColor(hex: string): string {
+  return relLuminance(hex) > 0.35 ? '#000000' : '#ffffff';
+}
+
+/**
+ * 라이트 모드(흰 지도/표면)에서 밝은 진도색(진도1 흰색 계열, 크림, 노랑)이
+ * 배경과 동화되지 않도록 외곽선 색을 반환한다. 밝은 색 -> 회색, 나머지 -> 흰색.
+ */
+export function getScaleStrokeColor(hex: string): string {
+  return relLuminance(hex) > 0.5 ? '#94a3b8' : '#ffffff';
+}
+
 // 3-프레임 미디언 필터
 export class NoiseFilterService {
   applyMedianFilter(stn: any, newJindo: number): number {

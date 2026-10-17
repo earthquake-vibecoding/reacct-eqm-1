@@ -3,15 +3,16 @@
  */
 
 /**
- * 대권거리 및 방향각을 고려하여 구면(WGS84) 상의 완벽한 원 좌표 배열을 생성
+ * Web Mercator 평면 상에서 왜곡(달걀형 찌그러짐) 없이 완벽한 정원을 유지하는 원 좌표 배열 생성
+ * - 진앙 위도(centerLat) 기준 실제 거리(radiusKm) 스케일을 유지하면서 화면상으로는 정확한 원으로 표시
  * @param center [longitude, latitude]
  * @param radiusKm 반경 (km)
- * @param points 다각형 버텍스 수 (기본 64)
+ * @param points 다각형 버텍스 수 (기본 96)
  */
 export function createGeodesicCircle(
   center: [number, number],
   radiusKm: number,
-  points = 64
+  points = 96
 ): [number, number][] {
   if (radiusKm <= 0) return [];
   const [centerLon, centerLat] = center;
@@ -19,21 +20,19 @@ export function createGeodesicCircle(
   const rad = Math.PI / 180;
   const R = 6371.0088; // 지구 평균 반경 (km)
 
-  const dByR = radiusKm / R;
-  const lat1 = centerLat * rad;
-  const lon1 = centerLon * rad;
+  // 진앙 위도에서의 Web Mercator 투영 반경 (라디안 단위)
+  const cosLat = Math.max(0.1, Math.cos(centerLat * rad));
+  const mercRadius = radiusKm / (R * cosLat);
+  const centerMercY = Math.log(Math.tan(Math.PI / 4 + (centerLat * rad) / 2));
+  const centerMercX = centerLon * rad;
 
   for (let i = 0; i <= points; i++) {
-    const bearing = (i * 360 / points) * rad;
-    const lat2 = Math.asin(
-      Math.sin(lat1) * Math.cos(dByR) +
-      Math.cos(lat1) * Math.sin(dByR) * Math.cos(bearing)
-    );
-    const lon2 = lon1 + Math.atan2(
-      Math.sin(bearing) * Math.sin(dByR) * Math.cos(lat1),
-      Math.cos(dByR) - Math.sin(lat1) * Math.sin(lat2)
-    );
-    coords.push([lon2 / rad, lat2 / rad]);
+    const theta = (i * 2 * Math.PI) / points;
+    const mx = centerMercX + mercRadius * Math.cos(theta);
+    const my = centerMercY + mercRadius * Math.sin(theta);
+    const lon = mx / rad;
+    const lat = (2 * Math.atan(Math.exp(my)) - Math.PI / 2) / rad;
+    coords.push([lon, Math.max(-85, Math.min(85, lat))]);
   }
   return coords;
 }
@@ -57,7 +56,7 @@ export function buildWaveGeoJSON(
 
   // P파 원 (청록색 / 블루)
   if (pRadiusKm > 0) {
-    const pCoords = createGeodesicCircle(epicenter, pRadiusKm, 64);
+    const pCoords = createGeodesicCircle(epicenter, pRadiusKm, 96);
     if (pCoords.length > 0) {
       features.push({
         type: 'Feature',
@@ -75,7 +74,7 @@ export function buildWaveGeoJSON(
 
   // S파 원 (주황색 / 빨간색)
   if (sRadiusKm > 0) {
-    const sCoords = createGeodesicCircle(epicenter, sRadiusKm, 64);
+    const sCoords = createGeodesicCircle(epicenter, sRadiusKm, 96);
     if (sCoords.length > 0) {
       features.push({
         type: 'Feature',

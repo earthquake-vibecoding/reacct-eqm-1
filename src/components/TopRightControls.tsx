@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../types';
 import styles from '../App.module.css';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import { audioService } from '../AudioService';
 
 interface TopRightControlsProps {
@@ -11,6 +11,8 @@ interface TopRightControlsProps {
   handleResetCamera: () => void;
   isDarkMode: boolean;
   setIsDarkMode: (v: boolean) => void;
+  showStations: boolean;
+  onToggleStations: () => void;
 }
 
 export const TopRightControls: React.FC<TopRightControlsProps> = ({
@@ -19,6 +21,8 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
   handleResetCamera,
   isDarkMode,
   setIsDarkMode,
+  showStations,
+  onToggleStations,
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -117,6 +121,15 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
       <div className={styles.iconControlsGroup}>
         <button type="button" className={styles.iconBtn} onClick={toggleMute} title={isMuted ? "소리 켜기" : "소리 끄기"}>
           {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          onClick={onToggleStations}
+          title={showStations ? 'P2P 관측점 숨기기' : 'P2P 관측점 표시'}
+          style={{ opacity: showStations ? 1 : 0.45 }}
+        >
+          {showStations ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
         <button type="button" className={styles.iconBtn} onClick={handleResetCamera} title={t('controls.resetCamera')}>
           <LocateFixed size={16} />

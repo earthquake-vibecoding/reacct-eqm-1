@@ -48,9 +48,10 @@ export function useEEWWaves({ mapRef, mapLoaded, eewContext, eewServiceRef }: Us
       }
 
       const now = Date.now();
-      const originTs = activeEEW.originTimestamp || now;
+      const originTs = activeEEW.originTimestamp ?? now;
       const elapsedSec = Math.max(0, (now - originTs) / 1000);
-      const depthKm = Math.max(0, activeEEW.Depth || 10);
+      const rawDepth = typeof activeEEW.Depth === 'number' ? activeEEW.Depth : parseFloat(String(activeEEW.Depth ?? ''));
+      const depthKm = Math.max(0, Number.isFinite(rawDepth) ? rawDepth : 10);
 
       if (elapsedSec > 180) {
         clearWaves();

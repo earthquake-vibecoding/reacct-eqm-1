@@ -971,6 +971,7 @@
   color: #ffffff;
   font-size: 11px;
   font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
 }
@@ -1073,7 +1074,7 @@
   font-weight: 800;
   text-align: center;
   min-width: 36px;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18);
 }
 
 /* Tsunami Banner */
@@ -1291,6 +1292,7 @@
   color: #ffffff;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18);
 }
 
 /* ==========================================================================
@@ -1377,7 +1379,7 @@
   font-weight: 700;
   color: #ffffff;
   text-align: center;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18);
 }
 
 .legendItem {
@@ -1980,4 +1982,190 @@
   background-color: #7c3aed;
   color: #fff;
   font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   JMA 진도 DB 아카이브 패널 (1919년~ 과거 지진 조회)
+   -------------------------------------------------------------------------- */
+.jmaHistoryOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.jmaHistoryPanel {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: min(520px, 100%);
+  max-height: min(70vh, 640px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.jmaHistoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+.jmaHistoryCloseBtn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+
+.jmaHistoryForm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.jmaHistoryDateInput,
+.jmaHistorySelect {
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+.jmaHistoryTilde {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.jmaHistorySearchBtn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--accent-blue);
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.jmaHistorySearchBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.jmaHistoryError,
+.jmaHistoryEmpty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.jmaHistoryError {
+  color: var(--accent-red);
+}
+
+.jmaHistoryList {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.jmaHistoryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.jmaHistoryItem:hover {
+  background-color: var(--surface-active);
+}
+
+.jmaHistoryItem:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.jmaHistoryItemScale {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18);
+}
+
+.jmaHistoryItemTime {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.jmaHistoryItemName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jmaHistoryItemMag {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.jmaHistoryItemLoading {
+  color: var(--text-muted);
+}
+
+.p2pHistoryLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.p2pArchiveBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.p2pArchiveBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }

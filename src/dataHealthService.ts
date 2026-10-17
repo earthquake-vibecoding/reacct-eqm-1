@@ -4,7 +4,7 @@ import { DataSourceHealth, HealthSourceId, SourceHealthStatus } from './types';
 // 각 데이터 소스별 지연(delayed) 및 오프라인(offline) 판정 임계치 (ms)
 const HEALTH_THRESHOLDS: Record<HealthSourceId, { delayed: number; offline: number }> = {
   kmoni: { delayed: 4500, offline: 15000 },
-  wolfx: { delayed: 18000, offline: 45000 },
+  wolfx: { delayed: 65000, offline: 130000 },
   p2p: { delayed: 45000, offline: 100000 },
   kma: { delayed: 120000, offline: 240000 },
 };

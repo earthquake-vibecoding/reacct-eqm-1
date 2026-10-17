@@ -4,21 +4,23 @@ import { DataSourceType, SystemAlertStatus, HistoryEntry } from '../../types';
 import { TopStationItem } from '../../QuakeDetectService';
 import { P2PEarthquakeEvent, P2PObservationPoint } from '../../P2PQuakeService';
 import { translateRegionName, translatePrefecture, formatObservationPointName } from '../../translateUtils';
+import { getScaleTextColor } from '../../utils';
 import { ChevronUp, ChevronDown, MapPin, Activity, List, Info } from 'lucide-react';
 import { SystemStatusCard } from '../SystemStatusCard';
 import { HistoryCard } from '../HistoryCard';
 import styles from './MobileView.module.css';
 
+// 일본 기상청(JMA) 표준 컬러 유니버설 디자인(CUD) 진도 배색
 const JMA_SCALES = [
-  { label: '7', color: '#7e22ce' },
-  { label: '6+', color: '#991b1b', raw: '6강' },
-  { label: '6-', color: '#dc2626', raw: '6약' },
-  { label: '5+', color: '#ea580c', raw: '5강' },
-  { label: '5-', color: '#f97316', raw: '5약' },
-  { label: '4', color: '#eab308', textColor: '#000' },
-  { label: '3', color: '#16a34a' },
-  { label: '2', color: '#2563eb' },
-  { label: '1', color: '#60a5fa' },
+  { label: '7', color: '#B40068' },
+  { label: '6+', color: '#A50021', raw: '6강' },
+  { label: '6-', color: '#FF2800', raw: '6약' },
+  { label: '5+', color: '#FF9900', raw: '5강' },
+  { label: '5-', color: '#FFE600', raw: '5약' },
+  { label: '4', color: '#FAE696' },
+  { label: '3', color: '#0041FF' },
+  { label: '2', color: '#00AAFF' },
+  { label: '1', color: '#F2F2FF' },
 ];
 
 type SheetState = 'collapsed' | 'half' | 'full';
@@ -36,6 +38,7 @@ interface MobileBottomSheetProps {
   hasActiveAlert?: boolean;
   alertStatus?: SystemAlertStatus;
   alertTitle?: string;
+  onOpenArchive?: () => void;
 }
 
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
@@ -51,17 +54,16 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   hasActiveAlert = false,
   alertStatus,
   alertTitle,
+  onOpenArchive,
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
 
   const [sheetState, setSheetState] = useState<SheetState>('collapsed');
-  const [activeTab, setActiveTab] = useState<'intensity' | 'p2p' | 'legend'>(
-    dataSource === 'p2pquake' ? 'p2p' : 'intensity'
-  );
+  const [activeTab, setActiveTab] = useState<'intensity' | 'p2p' | 'legend'>('p2p');
   const [selectedScaleFilter, setSelectedScaleFilter] = useState<number | null>(null);
 
-  // DataSource가 바뀌면 자동으로 탭 맞춰주기
+  /* [비활성화] 실시간 진도 TOP 5 탭 자동 전환 비활성화
   React.useEffect(() => {
     if (dataSource === 'p2pquake') {
       setActiveTab('p2p');
@@ -69,6 +71,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       setActiveTab('intensity');
     }
   }, [dataSource]);
+  */
 
   // 드래그 터치 시작 Y 좌표
   const touchStartYRef = useRef<number | null>(null);
@@ -167,6 +170,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       {sheetState !== 'collapsed' && (
         <>
           <div className={styles.sheetTabBar} role="tablist">
+            {/* [비활성화] 실시간 진도 TOP 5 탭
             <button
               type="button"
               role="tab"
@@ -179,6 +183,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                 <span>{t('dashboard.tab') || t('dashboard.title') || '실시간 진도'}</span>
               </div>
             </button>
+            */}
 
             <button
               type="button"
@@ -217,7 +222,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           </div>
 
           <div className={styles.sheetScrollContent}>
-            {/* 탭 1: 실시간 진도 TOP 5 */}
+            {/* [비활성화] 탭 1: 실시간 진도 TOP 5
             {activeTab === 'intensity' && (
               <>
                 <div className={styles.sheetHeaderRow}>
@@ -274,6 +279,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                 </div>
               </>
             )}
+            */}
 
             {/* 탭 2: P2P 지진 정보 */}
             {activeTab === 'p2p' && (
@@ -302,6 +308,17 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                         </div>
                       );
                     })}
+                    {onOpenArchive && (
+                      <div
+                        className={styles.mobileHistoryChip}
+                        onClick={onOpenArchive}
+                      >
+                        <span className={styles.historyChipBadge}>🕰</span>
+                        <span className={styles.historyChipLabel}>
+                          {currentLang.startsWith('en') ? 'Archive' : currentLang.startsWith('ja') ? '過去検索' : '옛날 지진'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -433,7 +450,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                         className={styles.mobileScaleCell}
                         style={{
                           backgroundColor: scale.color,
-                          color: scale.textColor || '#ffffff',
+                          color: getScaleTextColor(scale.color),
                         }}
                       >
                         {displayLabel}

@@ -104,7 +104,7 @@ export async function setupBaseAndEewLayers(
     type: 'fill',
     source: 'eew-waves',
     filter: ['==', ['get', 'waveType'], 'P'],
-    paint: { 'fill-color': '#06b6d4', 'fill-opacity': 0.12 }
+    paint: { 'fill-color': '#38bdf8', 'fill-opacity': 0.03 }
   });
 
   map.addLayer({
@@ -112,7 +112,7 @@ export async function setupBaseAndEewLayers(
     type: 'line',
     source: 'eew-waves',
     filter: ['==', ['get', 'waveType'], 'P'],
-    paint: { 'line-color': '#06b6d4', 'line-width': 2.5, 'line-opacity': 0.85 }
+    paint: { 'line-color': '#38bdf8', 'line-width': 1.5, 'line-opacity': 0.85 }
   });
 
   map.addLayer({
@@ -120,7 +120,7 @@ export async function setupBaseAndEewLayers(
     type: 'fill',
     source: 'eew-waves',
     filter: ['==', ['get', 'waveType'], 'S'],
-    paint: { 'fill-color': '#ef4444', 'fill-opacity': 0.22 }
+    paint: { 'fill-color': '#ef4444', 'fill-opacity': 0.1 }
   });
 
   map.addLayer({
@@ -128,7 +128,7 @@ export async function setupBaseAndEewLayers(
     type: 'line',
     source: 'eew-waves',
     filter: ['==', ['get', 'waveType'], 'S'],
-    paint: { 'line-color': '#ef4444', 'line-width': 3.0, 'line-opacity': 0.95 }
+    paint: { 'line-color': '#ef4444', 'line-width': 2.0, 'line-opacity': 0.9 }
   });
 
   map.addSource('eew-epicenter', {
