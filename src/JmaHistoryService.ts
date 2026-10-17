@@ -6,6 +6,7 @@ import {
   P2PObservationPoint,
   formatScaleJMA,
 } from './P2PQuakeService';
+import i18n from './i18n';
 
 export interface JmaHistoryItem {
   id: string;
@@ -16,6 +17,8 @@ export interface JmaHistoryItem {
   depth: number;
   magnitude: number;
   maxScale: number;
+  // 목록용 쓰나미 매칭 (기간 24개월 초과 시 null)
+  tsunami: { hasTsunami: boolean; maxWaterHeight: number } | null;
 }
 
 export async function searchJmaHistory(
@@ -32,13 +35,28 @@ export async function searchJmaHistory(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function tsunamiText(tsunami: any): string {
-  // getTsunamiText 키워드('걱정','조사','경보' 등)에 걸리지 않는 문구로 그대로 표시
+  // getTsunamiText 키워드('걱정','조사','경보','Warning' 등)에 걸리지 않는 문구로
+  // 만들어 카드 배너에 그대로 표시된다.
+  const lng = i18n.language?.startsWith('en') ? 'en' : i18n.language?.startsWith('ja') ? 'ja' : 'ko';
   if (tsunami?.hasTsunami) {
     const h = Number(tsunami.maxWaterHeight);
-    return h > 0 ? `쓰나미 발생 기록 있음 (NOAA 최대 월고 ${h}m)` : '쓰나미 발생 기록 있음 (NOAA 기록)';
+    if (h > 0) {
+      return lng === 'en' ? `Tsunami recorded (NOAA max runup ${h}m)`
+        : lng === 'ja' ? `津波の発生記録あり (NOAA 最大遡上${h}m)`
+        : `쓰나미 발생 기록 있음 (NOAA 최대 월고 ${h}m)`;
+    }
+    return lng === 'en' ? 'Tsunami recorded (NOAA)'
+      : lng === 'ja' ? '津波の発生記録あり (NOAA)'
+      : '쓰나미 발생 기록 있음 (NOAA 기록)';
   }
-  if (tsunami === null || tsunami === undefined) return '쓰나미 기록 조회 실패';
-  return '쓰나미 기록 없음 (NOAA)';
+  if (tsunami === null || tsunami === undefined) {
+    return lng === 'en' ? 'Tsunami lookup failed'
+      : lng === 'ja' ? '津波記録の取得に失敗'
+      : '쓰나미 기록 조회 실패';
+  }
+  return lng === 'en' ? 'No tsunami record (NOAA)'
+    : lng === 'ja' ? '津波の記録なし (NOAA)'
+    : '쓰나미 기록 없음 (NOAA)';
 }
 
 export async function fetchJmaHistoryEvent(id: string): Promise<P2PEarthquakeEvent> {
