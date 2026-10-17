@@ -62,11 +62,12 @@ export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null)
     const lng = i18n.language;
     const transName = translateRegionName(props.name, lng);
     const maxScaleLabel = lng.startsWith('en') ? 'Max Intensity' : lng.startsWith('ja') ? '最大震度' : '최대 관측 진도';
+    const estLabel = lng.startsWith('en') ? 'Estimated Intensity' : lng.startsWith('ja') ? '推定震度' : '추정 진도';
     const codeLabel = lng.startsWith('en') ? 'Area Code' : lng.startsWith('ja') ? '区域コード' : '구역 코드';
     onHover({
       type: 'prefecture',
       title: transName !== props.name ? `${transName}` : props.name,
-      subtitle: `${maxScaleLabel}: ${localizeScale(props.scaleStr, lng)} | ${codeLabel}: ${props.code}${props.name !== transName ? ` (${props.name})` : ''}`,
+      subtitle: `${props.estimated ? estLabel : maxScaleLabel}: ${localizeScale(props.scaleStr, lng)} | ${codeLabel}: ${props.code}${props.name !== transName ? ` (${props.name})` : ''}`,
       x: e.point?.x, y: e.point?.y, scaleColor: props.color
     });
   });

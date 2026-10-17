@@ -50,9 +50,9 @@ function tsunamiText(tsunami: any): string {
       : '쓰나미 발생 기록 있음 (NOAA 기록)';
   }
   if (tsunami === null || tsunami === undefined) {
-    return lng === 'en' ? 'Tsunami lookup failed'
-      : lng === 'ja' ? '津波記録の取得に失敗'
-      : '쓰나미 기록 조회 실패';
+    return lng === 'en' ? 'Tsunami record unavailable (unknown magnitude, etc.)'
+      : lng === 'ja' ? '津波記録は確認不可 (マグニチュード不明など)'
+      : '쓰나미 기록 확인 불가 (규모 미상 등)';
   }
   return lng === 'en' ? 'No tsunami record (NOAA)'
     : lng === 'ja' ? '津波の記録なし (NOAA)'

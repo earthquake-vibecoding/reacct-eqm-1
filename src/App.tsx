@@ -55,6 +55,13 @@ export default function App() {
     if (typeof localStorage === 'undefined') return true;
     return localStorage.getItem('eqm-show-stations') !== 'false';
   });
+  // 아카이브 빈 구역 보간 추정 채우기 토글 (localStorage 유지)
+  const [estimateFill, setEstimateFill] = useState<boolean>(() => {
+    if (typeof localStorage === 'undefined') return true;
+    return localStorage.getItem('eqm-estimate-fill') !== 'false';
+  });
+  const estimateFillRef = useRef(estimateFill);
+  estimateFillRef.current = estimateFill;
   const [mapLoaded, setMapLoaded] = useState(false);
   const [eewContext, setEewContext] = useState<EEWContext>({ state: EEWState.IDLE, data: null });
   const [topStations, setTopStations] = useState<TopStationItem[]>([]);
@@ -198,7 +205,7 @@ export default function App() {
     }
     
     if (mapControllerRef.current) {
-      mapControllerRef.current.setP2PEvent(ev);
+      mapControllerRef.current.setP2PEvent(ev, estimateFillRef.current);
     }
     if (mapRef.current) {
       fitP2PEventBounds(mapRef.current, ev, isMobile);
@@ -295,7 +302,7 @@ export default function App() {
       setSelectedP2PEvent((prev) => {
         const next = prev ? (prev.eventId === ev.eventId ? ev : prev) : ev;
         if (mapControllerRef.current) {
-          mapControllerRef.current.setP2PEvent(next);
+          mapControllerRef.current.setP2PEvent(next, estimateFillRef.current);
         }
         return next;
       });
@@ -400,9 +407,9 @@ export default function App() {
 
   useEffect(() => {
     if (mapLoaded && mapControllerRef.current && selectedP2PEvent) {
-      mapControllerRef.current.setP2PEvent(selectedP2PEvent);
+      mapControllerRef.current.setP2PEvent(selectedP2PEvent, estimateFillRef.current);
     }
-  }, [selectedP2PEvent, mapLoaded]);
+  }, [selectedP2PEvent, mapLoaded, estimateFill]);
 
   // 창 리사이즈 및 모바일/PC 레이아웃 전환 시 맵 크기 즉시 보정
   useEffect(() => {
@@ -458,6 +465,16 @@ export default function App() {
     });
   };
 
+  const handleToggleEstimateFill = () => {
+    setEstimateFill((prev) => {
+      const next = !prev;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('eqm-estimate-fill', String(next));
+      }
+      return next;
+    });
+  };
+
   return (
     <div className={`${styles.container} ${isDarkMode ? styles.dark : ''}`}>
       <div ref={containerRef} className={styles.map} />
@@ -475,6 +492,9 @@ export default function App() {
             setIsDarkMode={setIsDarkMode}
             showStations={showStations}
             onToggleStations={handleToggleStations}
+            estimateFill={estimateFill}
+            onToggleEstimateFill={handleToggleEstimateFill}
+            showEstimateControl={selectedP2PEvent?.issueType === 'JmaArchive'}
           />
 
           <MobileAlerts
@@ -524,6 +544,9 @@ export default function App() {
             setIsDarkMode={setIsDarkMode}
             showStations={showStations}
             onToggleStations={handleToggleStations}
+            estimateFill={estimateFill}
+            onToggleEstimateFill={handleToggleEstimateFill}
+            showEstimateControl={selectedP2PEvent?.issueType === 'JmaArchive'}
           />
 
           <div className={styles.leftSidebar}>

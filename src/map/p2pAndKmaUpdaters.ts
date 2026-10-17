@@ -1,7 +1,11 @@
 import { DataSourceType } from '../types';
 import { P2PEarthquakeEvent, formatScaleJMA } from '../P2PQuakeService';
-import { getScaleStrokeColor } from '../utils';
+import { getScaleStrokeColor, mixColor } from '../utils';
 import { findAreaFeature } from './geoMatch';
+import { estimateAreaScale } from './intensityEstimate';
+
+// 추정(보간) 진도 채움의 탈색 대상 톤. 실측 생생 진도색과 색으로 구분하기 위한 것
+const ESTIMATE_TONE = '#94a3b8';
 
 const P2P_LAYER_IDS = [
   'p2p-areas-fill', 'p2p-areas-line', 'p2p-points-layer',
@@ -37,7 +41,8 @@ export function applyDataSourceVisibility(
 
 export function updateP2PEventOnMap(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  map: any, event: P2PEarthquakeEvent | null, japanGeojson: any, currentDataSource: DataSourceType
+  map: any, event: P2PEarthquakeEvent | null, japanGeojson: any, currentDataSource: DataSourceType,
+  estimateFill = false
 ) {
   const pointsSource = map.getSource('p2p-points');
   const hypocenterSource = map.getSource('p2p-hypocenter');
@@ -112,10 +117,25 @@ export function updateP2PEventOnMap(
     }
 
     const isEarthquakeTab = currentDataSource === 'p2pquake';
+
+    // 보간 추정: 실측 자료가 없는 구역을 관측점 거리 가중으로 추정해 채운다.
+    // JMA 아카이브처럼 관측점이 성긴 자료 전용이며, 추정 구역은 탈색 톤으로 실측과 색으로 구분한다.
+    const estScaleMap = new Map<string, number>();
+    if (estimateFill && event.issueType === 'JmaArchive') {
+      const estPoints = event.points.filter((pt) => pt.scale > 0).map((pt) => ({ lon: pt.lon, lat: pt.lat, scale: pt.scale }));
+      for (const f of japanGeojson.features) {
+        const code = String(f.properties?.code || '');
+        if (!code || areaScaleMap.has(code)) continue;
+        const est = estimateAreaScale(f, estPoints, event.hypocenter.magnitude);
+        if (est >= 10) estScaleMap.set(code, est);
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const areaFeatures = (japanGeojson.features as any[]).map((f) => {
       const code = String(f.properties?.code || '');
       const scale = areaScaleMap.get(code);
+      const estScale = estScaleMap.get(code);
       if (scale && scale >= 10) {
         const scaleInfo = formatScaleJMA(scale);
         return {
@@ -123,6 +143,18 @@ export function updateP2PEventOnMap(
           properties: {
             code: f.properties?.code, name: f.properties?.name, namekana: f.properties?.namekana,
             scale, scaleStr: scaleInfo.text, color: scaleInfo.color, stroke: getScaleStrokeColor(scaleInfo.color), opacity: isEarthquakeTab ? 0.85 : 0.75
+          }
+        };
+      }
+      if (estScale) {
+        const scaleInfo = formatScaleJMA(estScale);
+        // 추정 구역은 진도색을 회색 톤으로 50% 탈색해 실측과 색으로 구분
+        const washed = mixColor(scaleInfo.color, ESTIMATE_TONE, 0.5);
+        return {
+          type: 'Feature', geometry: f.geometry,
+          properties: {
+            code: f.properties?.code, name: f.properties?.name, namekana: f.properties?.namekana,
+            scale: estScale, scaleStr: scaleInfo.text, color: washed, stroke: getScaleStrokeColor(washed), opacity: 0.75, estimated: true
           }
         };
       }

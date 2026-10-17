@@ -66,6 +66,9 @@ export const Legend: React.FC<LegendProps> = ({ dataSource }) => {
               <div className={styles.legendItem}>
                 <span className={styles.colorPointP2P} /> {t('legend.obsPoint')}
               </div>
+              <div className={styles.legendItem}>
+                <span className={styles.colorEstimated} /> {t('legend.estimatedFill')}
+              </div>
             </>
           ) : (
             <>

@@ -19,12 +19,15 @@ export const resources = {
       },
       controls: {
         resetCamera: '화면 초기화',
+        soundOn: '소리 켜기',
+        soundOff: '소리 끄기',
         lightMode: '라이트 모드',
         darkMode: '다크 모드',
         language: '언어',
         p2pPoints: 'P2P 관측점',
         showP2pPoints: 'P2P 관측점 표시',
         hideP2pPoints: 'P2P 관측점 숨기기',
+        estimateFill: '진도 추정 채우기 (보간)',
       },
       dashboard: {
         title: '실시간 최대 진도 관측소',
@@ -126,6 +129,7 @@ export const resources = {
         epicenter: '진원지 (Epicenter)',
         hypocenterAlt: '진앙지 (Epicenter)',
         obsPoint: '관측 지점 (P2P 551)',
+        estimatedFill: '추정 진도 (보간 채움)',
         pWave: 'P파 도달 범위 (P-Wave)',
         sWave: 'S파 도달 범위 (S-Wave, 주요동)',
         realtimeStation: '실시간 관측소',
@@ -198,12 +202,15 @@ export const resources = {
       },
       controls: {
         resetCamera: 'Reset View',
+        soundOn: 'Sound on',
+        soundOff: 'Mute',
         lightMode: 'Light Mode',
         darkMode: 'Dark Mode',
         language: 'Language',
         p2pPoints: 'P2P Points',
         showP2pPoints: 'Show P2P points',
         hideP2pPoints: 'Hide P2P points',
+        estimateFill: 'Interpolated intensity fill',
       },
       dashboard: {
         title: 'Real-time Max Intensity Stations',
@@ -305,6 +312,7 @@ export const resources = {
         epicenter: 'Epicenter',
         hypocenterAlt: 'Epicenter',
         obsPoint: 'Observed Point (P2P 551)',
+        estimatedFill: 'Estimated intensity (interpolated)',
         pWave: 'P-Wave Arrival Range',
         sWave: 'S-Wave Arrival Range (Main Shaking)',
         realtimeStation: 'Real-time Station',
@@ -377,12 +385,15 @@ export const resources = {
       },
       controls: {
         resetCamera: '画面リセット',
+        soundOn: '音オン',
+        soundOff: 'ミュート',
         lightMode: 'ライトモード',
         darkMode: 'ダークモード',
         language: '言語',
         p2pPoints: 'P2P 観測点',
         showP2pPoints: 'P2P 観測点を表示',
         hideP2pPoints: 'P2P 観測点を隠す',
+        estimateFill: '震度推定補間',
       },
       dashboard: {
         title: 'リアルタイム最大震度観測点',
@@ -483,6 +494,7 @@ export const resources = {
         epicenter: '震源地 (Epicenter)',
         hypocenterAlt: '震央 (Epicenter)',
         obsPoint: '観測地点 (P2P 551)',
+        estimatedFill: '推定震度 (補間)',
         pWave: 'P波 到達予想範囲',
         sWave: 'S波 到達予想範囲 (主要動)',
         realtimeStation: 'リアルタイム観測点',
@@ -541,7 +553,10 @@ export const resources = {
 };
 
 const savedLang = typeof localStorage !== 'undefined' ? localStorage.getItem('app_language') : null;
-const initialLang = savedLang === 'ja' || savedLang === 'en' || savedLang === 'ko' ? savedLang : 'ko';
+// 저장된 언어 설정이 없으면 브라우저 언어로 자동 감지 (ko/ja, 그 외는 en)
+const browserLang = typeof navigator !== 'undefined' && navigator.language?.startsWith('ko') ? 'ko'
+  : typeof navigator !== 'undefined' && navigator.language?.startsWith('ja') ? 'ja' : 'en';
+const initialLang = savedLang === 'ja' || savedLang === 'en' || savedLang === 'ko' ? savedLang : browserLang;
 
 i18n.use(initReactI18next).init({
   resources,

@@ -5,8 +5,9 @@ import express from 'express';
 const SHINDO_API = 'https://www.data.jma.go.jp/eqdb/data/shindo/api/';
 
 // 관측진도 코드: 1~4, A=5약, B=5강, C=6약, D=6강, 7=7 (JMA 계급 코드, "이상" 조건)
+// 5/6 = 구계급(1996-10 이전) 자료. 약/강 구분이 없어 5강/6강으로 근사 표시
 const CHAR_TO_SCALE: Record<string, number> = {
-  '1': 10, '2': 20, '3': 30, '4': 40, A: 45, B: 50, C: 55, D: 60, 7: 70,
+  '1': 10, '2': 20, '3': 30, '4': 40, '5': 50, '6': 60, A: 45, B: 50, C: 55, D: 60, 7: 70,
 };
 
 // int[] 관측점 code 앞 2자리 = JMA 지역 코드
@@ -86,6 +87,8 @@ function jstToUtcMs(ot: string): number {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function findTsunamiMatch(jstMs: number, lat: number, lon: number, mag: number, items: any[]): TsunamiHit | null {
   if (!Number.isFinite(jstMs)) return null;
+  // 규모 미상이면 규모 게이트를 쓸 수 없어 근처 대지진 기록이 오탐으로 붙는다 -> 매칭 생략
+  if (!(mag > 0)) return null;
   let best: { score: number; height: number } | null = null;
   for (const it of items) {
     const evDate = new Date(Date.UTC(it.year, (it.month ?? 1) - 1, it.day ?? 1, it.hour ?? 0, it.minute ?? 0));

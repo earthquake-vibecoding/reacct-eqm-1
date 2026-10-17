@@ -80,6 +80,17 @@ export function getScaleStrokeColor(hex: string): string {
   return relLuminance(hex) > 0.5 ? '#94a3b8' : '#ffffff';
 }
 
+/**
+ * 두 hex 색을 선형 보간한다(t=0 -> a, t=1 -> b). 추정 진도 채움을 실측과
+ * 색으로 구분할 때 진도색을 회색 톤으로 탈색하는 용도.
+ */
+export function mixColor(a: string, b: string, t: number): string {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  const mix = pa.map((v, i) => Math.round(v + (pb[i] - v) * t));
+  return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
 // 3-프레임 미디언 필터
 export class NoiseFilterService {
   applyMedianFilter(stn: any, newJindo: number): number {
