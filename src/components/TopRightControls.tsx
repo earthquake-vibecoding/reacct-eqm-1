@@ -126,7 +126,7 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
           type="button"
           className={styles.iconBtn}
           onClick={onToggleStations}
-          title={showStations ? 'P2P 관측점 숨기기' : 'P2P 관측점 표시'}
+          title={showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}
           style={{ opacity: showStations ? 1 : 0.45 }}
         >
           {showStations ? <Eye size={16} /> : <EyeOff size={16} />}

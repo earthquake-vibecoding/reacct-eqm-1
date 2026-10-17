@@ -315,7 +315,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       >
                         <span className={styles.historyChipBadge}>🕰</span>
                         <span className={styles.historyChipLabel}>
-                          {currentLang.startsWith('en') ? 'Archive' : currentLang.startsWith('ja') ? '過去検索' : '옛날 지진'}
+                          {t('jmaArchive.open')}
                         </span>
                       </div>
                     )}

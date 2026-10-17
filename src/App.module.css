@@ -2169,3 +2169,42 @@
   color: var(--text-primary);
   border-color: var(--border-strong);
 }
+
+.jmaHistoryPresets {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.jmaHistoryPresetChip {
+  flex-shrink: 0;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.jmaHistoryPresetChip:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-blue);
+}
+
+.jmaHistoryPresetChip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.jmaHistoryItemTsunami {
+  height: 22px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}

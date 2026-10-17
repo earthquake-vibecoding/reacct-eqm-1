@@ -75,22 +75,19 @@ async function fetchNoaaMonth(ym: string): Promise<unknown[]> {
   return Array.isArray(data?.items) ? data.items : [];
 }
 
-async function lookupTsunami(ot: string, lat: number, lon: number, mag: number): Promise<TsunamiHit | null> {
+// "YYYY/MM/DD HH:MM:SS"(JST) -> UTC ms. 파싱 실패 시 NaN.
+function jstToUtcMs(ot: string): number {
   const m = /^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/.exec(ot);
-  if (!m) return null;
-  // JST(UTC+9) -> UTC. 달 경계를 고려해 전후 달까지 조회.
-  const jstMs = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9, +m[5]);
-  const utc = new Date(jstMs);
-  const yms = new Set<string>();
-  for (const off of [-1, 0, 1]) {
-    const t = new Date(Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth() + off, 1));
-    yms.add(`${t.getUTCFullYear()}-${t.getUTCMonth() + 1}`);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const months = await Promise.all([...yms].map(fetchNoaaMonth));
+  if (!m) return NaN;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9, +m[5]);
+}
+
+// 단일 후보군(items) 안에서 JMA 이벤트에 최근접한 쓰나미 기록 매칭
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function findTsunamiMatch(jstMs: number, lat: number, lon: number, mag: number, items: any[]): TsunamiHit | null {
+  if (!Number.isFinite(jstMs)) return null;
   let best: { score: number; height: number } | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const it of months.flat() as any[]) {
+  for (const it of items) {
     const evDate = new Date(Date.UTC(it.year, (it.month ?? 1) - 1, it.day ?? 1, it.hour ?? 0, it.minute ?? 0));
     if (Math.abs(evDate.getTime() - jstMs) > 2 * 86_400_000) continue;
     const dLat = Math.abs((it.latitude ?? 999) - lat);
@@ -104,6 +101,64 @@ async function lookupTsunami(ot: string, lat: number, lon: number, mag: number):
   }
   if (!best) return { hasTsunami: false, maxWaterHeight: 0 };
   return { hasTsunami: true, maxWaterHeight: best.height };
+}
+
+async function lookupTsunami(ot: string, lat: number, lon: number, mag: number): Promise<TsunamiHit | null> {
+  const jstMs = jstToUtcMs(ot);
+  if (!Number.isFinite(jstMs)) return null;
+  // 달 경계를 고려해 전후 달까지 조회
+  const utc = new Date(jstMs);
+  const yms = new Set<string>();
+  for (const off of [-1, 0, 1]) {
+    const t = new Date(Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth() + off, 1));
+    yms.add(`${t.getUTCFullYear()}-${t.getUTCMonth() + 1}`);
+  }
+  const months = await Promise.all([...yms].map(fetchNoaaMonth));
+  return findTsunamiMatch(jstMs, lat, lon, mag, months.flat());
+}
+
+function fmtDay(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function searchForm(from: string, to: string) {
+  return {
+    mode: 'search',
+    dateTimeF: [from, '00:00'],
+    dateTimeT: [to, '23:59'],
+    mag: ['0.0', '9.9'],
+    dep: ['000', '999'],
+    epi: [], pref: [], city: [], station: [],
+    obsInt: '1',
+    maxInt: '1',
+    additionalC: 'false',
+    Sort: 'S0',
+    Comp: 'C0',
+    seisCount: 'false',
+    observed: 'false',
+  };
+}
+
+// JMA api는 검색 결과를 최대 1000건으로 자른다. 컷에 걸리면 기간을 반갈죽 재귀 조회해
+// 전체를 모은다. (3.11 같은 대지진일이 1000건 컷 뒤로 밀리는 문제 방지)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function searchShindoRange(from: string, to: string, depth = 0): Promise<any[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = (await postShindo(searchForm(from, to))) as any;
+  const items = Array.isArray(raw?.res) ? raw.res : [];
+  if (items.length < 1000 || depth >= 8) return items;
+  const fMs = Date.parse(`${from}T00:00:00Z`);
+  const tMs = Date.parse(`${to}T00:00:00Z`);
+  if (!Number.isFinite(fMs) || !Number.isFinite(tMs) || tMs < fMs) return items;
+  const days = (tMs - fMs) / 86_400_000 + 1;
+  const half = Math.floor(days / 2);
+  if (half < 1) return items; // 하루 단위인데도 1000건이면 여기까지
+  const splitStart = fMs + half * 86_400_000;
+  const [older, newer] = await Promise.all([
+    searchShindoRange(from, fmtDay(splitStart - 86_400_000), depth + 1),
+    searchShindoRange(fmtDay(splitStart), to, depth + 1),
+  ]);
+  return [...older, ...newer];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,27 +175,25 @@ export function registerJmaHistoryRoutes(app: express.Express) {
       return res.status(400).json({ error: 'Invalid minInt' });
     }
     try {
-      const data = await cached(`h:${from}:${to}:${minInt}`, () =>
-        postShindo({
-          mode: 'search',
-          dateTimeF: [from, '00:00'],
-          dateTimeT: [to, '23:59'],
-          mag: ['0.0', '9.9'],
-          dep: ['000', '999'],
-          epi: [], pref: [], city: [], station: [],
-          obsInt: minInt,
-          maxInt: '1',
-          additionalC: 'false',
-          Sort: 'S0',
-          Comp: 'C0',
-          seisCount: 'false',
-          observed: 'false',
-        })
-      );
+      const data = await cached(`h:${from}:${to}:${minInt}`, async () => {
+        const merged = await searchShindoRange(from, to);
+        // 부분 조회 병합이라 정렬 깨짐 -> 시각 내림차순 복구 + 중복 제거
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const seen = new Set<string>();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (merged as any[])
+          .filter((it) => {
+            const id = String(it?.id ?? '');
+            if (!id || seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          })
+          .sort((a, b) => (String(b.ot ?? '') > String(a.ot ?? '') ? 1 : -1));
+      });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const raw = (data as any)?.res;
+      const merged = data as any[];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const items = Array.isArray(raw) ? raw.map((it: any) => ({
+      const items = merged.map((it: any) => ({
         id: String(it.id),
         time: String(it.ot ?? ''),
         name: String(it.name ?? ''),
@@ -149,12 +202,36 @@ export function registerJmaHistoryRoutes(app: express.Express) {
         depth: parseNum(it.dep),
         magnitude: parseNum(it.mag),
         maxScale: maxIclsToScale(it.maxIcls),
-      })) : [];
+      }));
       // JMA api는 진도 하한(obsInt)으로 목록을 걸러주지 않으므로 직접 필터.
       // maxScale 0 = 최대진도 미상(구계급 등) -> 중요 지진 누락 방지 위해 항상 포함.
       const minScale = CHAR_TO_SCALE[minInt] ?? 0;
       const filtered = minScale > 0 ? items.filter((it) => it.maxScale >= minScale || it.maxScale === 0) : items;
-      res.json({ items: filtered });
+
+      // 목록 쓰나미 표시: 검색 기간 24개월 이하일 때만 NOAA 월 단위 일괄 매칭.
+      // 기간이 너무 길면 조회 비용 때문에 생략(null) — 상세 조회에서 개별 매칭 가능.
+      let noaaItems: unknown[] | null = null;
+      try {
+        const [fy, fm] = from.split('-').map(Number);
+        const [ty, tm] = to.split('-').map(Number);
+        const monthCount = (ty - fy) * 12 + (tm - fm) + 1;
+        if (monthCount >= 1 && monthCount <= 24) {
+          const yms: string[] = [];
+          for (let y = fy, m = fm; y < ty || (y === ty && m <= tm); m += 1) {
+            if (m > 12) { y += 1; m = 1; }
+            yms.push(`${y}-${String(m).padStart(2, '0')}`);
+          }
+          noaaItems = (await Promise.all(yms.map(fetchNoaaMonth))).flat();
+        }
+      } catch {
+        noaaItems = null;
+      }
+      const annotated = filtered.map((it) => ({
+        ...it,
+        tsunami: noaaItems ? findTsunamiMatch(jstToUtcMs(it.time), it.lat, it.lon, it.magnitude, noaaItems) : null,
+      }));
+
+      res.json({ items: annotated });
     } catch {
       res.status(502).json({ error: 'JMA shindo api request failed' });
     }

@@ -43,7 +43,7 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
   };
 
   const getTsunamiText = (tsunami: string): string => {
-    if (tsunami.includes('걱정') || tsunami.includes('None') || tsunami.includes('心配')) {
+    if (tsunami.includes('걱정') || tsunami.includes('None') || tsunami.includes('心配') || tsunami.includes('우려 없음')) {
       return t('p2p.tsunamiNone');
     }
     if (tsunami.includes('조사') || tsunami.includes('Unknown') || tsunami.includes('調査')) {
@@ -155,9 +155,9 @@ export const P2PQuakeCard: React.FC<P2PQuakeCardProps> = ({
                 type="button"
                 className={styles.p2pArchiveBtn}
                 onClick={onOpenArchive}
-                title={currentLang.startsWith('en') ? 'JMA intensity archive (since 1919)' : currentLang.startsWith('ja') ? 'JMA 震度DBアーカイブ (1919年~)' : 'JMA 진도 DB 아카이브 (1919년~)'}
+                title={t('jmaArchive.openTitle')}
               >
-                {currentLang.startsWith('en') ? 'Archive' : currentLang.startsWith('ja') ? '過去検索' : '옛날 지진'}
+                {t('jmaArchive.open')}
               </button>
             )}
           </div>

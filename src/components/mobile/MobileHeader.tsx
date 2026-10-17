@@ -188,13 +188,13 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             </div>
 
             <div>
-              <div className={styles.settingsSectionTitle}>P2P 관측점 표시</div>
+              <div className={styles.settingsSectionTitle}>{t('controls.p2pPoints')}</div>
               <button
                 type="button"
                 className={styles.settingsRowBtn}
                 onClick={onToggleStations}
               >
-                <span>{showStations ? 'P2P 관측점 숨기기' : 'P2P 관측점 표시'}</span>
+                <span>{showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}</span>
                 {showStations ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
