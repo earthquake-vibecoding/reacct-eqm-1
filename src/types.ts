@@ -56,7 +56,7 @@ export interface IGeoProvider {
 export interface MapRendererController {
   setDataSource: (source: DataSourceType) => void;
   getDataSource: () => DataSourceType;
-  setP2PEvent: (event: P2PEarthquakeEvent | null) => void;
+  setP2PEvent: (event: P2PEarthquakeEvent | null, estimateFill?: boolean) => void;
   setKMAEvent: (event: any | null) => void;
   // 리플레이 모드: 켜져 있는 동안 실시간 데이터가 지도 진도 점/감지 격자를 덮어쓰지 않는다
   setReplayMode: (on: boolean) => void;

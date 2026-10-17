@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../types';
 import styles from '../App.module.css';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff, PaintBucket } from 'lucide-react';
 import { audioService } from '../AudioService';
 
 interface TopRightControlsProps {
@@ -13,6 +13,10 @@ interface TopRightControlsProps {
   setIsDarkMode: (v: boolean) => void;
   showStations: boolean;
   onToggleStations: () => void;
+  estimateFill: boolean;
+  onToggleEstimateFill: () => void;
+  // 아카이브 이벤트 등 추정 채우기가 의미 있는 컨텍스트에서만 툴팁 버튼 노출
+  showEstimateControl: boolean;
 }
 
 export const TopRightControls: React.FC<TopRightControlsProps> = ({
@@ -23,6 +27,9 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
   setIsDarkMode,
   showStations,
   onToggleStations,
+  estimateFill,
+  onToggleEstimateFill,
+  showEstimateControl,
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -119,22 +126,35 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
 
       {/* 도구 모음 */}
       <div className={styles.iconControlsGroup}>
-        <button type="button" className={styles.iconBtn} onClick={toggleMute} title={isMuted ? "소리 켜기" : "소리 끄기"}>
+        <button type="button" className={styles.iconBtn} onClick={toggleMute} data-tip={isMuted ? t('controls.soundOn') : t('controls.soundOff')} aria-label={isMuted ? t('controls.soundOn') : t('controls.soundOff')}>
           {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
         <button
           type="button"
           className={styles.iconBtn}
           onClick={onToggleStations}
-          title={showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}
+          data-tip={showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}
+          aria-label={showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}
           style={{ opacity: showStations ? 1 : 0.45 }}
         >
           {showStations ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
-        <button type="button" className={styles.iconBtn} onClick={handleResetCamera} title={t('controls.resetCamera')}>
+        {showEstimateControl && (
+          <button
+            type="button"
+            className={styles.iconBtn}
+            onClick={onToggleEstimateFill}
+            data-tip={t('controls.estimateFill')}
+            aria-label={t('controls.estimateFill')}
+            style={{ opacity: estimateFill ? 1 : 0.45 }}
+          >
+            <PaintBucket size={16} />
+          </button>
+        )}
+        <button type="button" className={styles.iconBtn} onClick={handleResetCamera} data-tip={t('controls.resetCamera')} aria-label={t('controls.resetCamera')}>
           <LocateFixed size={16} />
         </button>
-        <button type="button" className={styles.iconBtn} onClick={() => setIsDarkMode(!isDarkMode)} title={isDarkMode ? t('controls.lightMode') : t('controls.darkMode')}>
+        <button type="button" className={styles.iconBtn} onClick={() => setIsDarkMode(!isDarkMode)} data-tip={isDarkMode ? t('controls.lightMode') : t('controls.darkMode')} aria-label={isDarkMode ? t('controls.lightMode') : t('controls.darkMode')}>
           {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>

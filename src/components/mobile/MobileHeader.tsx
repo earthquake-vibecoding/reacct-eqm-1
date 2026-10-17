@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../../types';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon, MoreHorizontal, X, Globe, Eye, EyeOff } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, MoreHorizontal, X, Globe, Eye, EyeOff, PaintBucket } from 'lucide-react';
 import { audioService } from '../../AudioService';
 import styles from './MobileView.module.css';
 
@@ -13,6 +13,10 @@ interface MobileHeaderProps {
   setIsDarkMode: (v: boolean) => void;
   showStations: boolean;
   onToggleStations: () => void;
+  estimateFill: boolean;
+  onToggleEstimateFill: () => void;
+  // 아카이브 이벤트 등 추정 채우기가 의미 있는 컨텍스트에서만 설정 행 노출
+  showEstimateControl: boolean;
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -23,6 +27,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   setIsDarkMode,
   showStations,
   onToggleStations,
+  estimateFill,
+  onToggleEstimateFill,
+  showEstimateControl,
 }) => {
   const { t, i18n } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
@@ -197,6 +204,16 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 <span>{showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}</span>
                 {showStations ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
+              {showEstimateControl && (
+                <button
+                  type="button"
+                  className={styles.settingsRowBtn}
+                  onClick={onToggleEstimateFill}
+                >
+                  <span>{t('controls.estimateFill')}</span>
+                  <PaintBucket size={18} style={{ opacity: estimateFill ? 1 : 0.45 }} />
+                </button>
+              )}
             </div>
           </div>
         </div>

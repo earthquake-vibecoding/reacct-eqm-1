@@ -81,8 +81,8 @@ export class CleanVectorMapRenderer {
           );
         },
         getDataSource: () => currentDataSource,
-        setP2PEvent: (event: P2PEarthquakeEvent | null) => {
-          updateP2PEventOnMap(map, event, japanGeojson, currentDataSource);
+        setP2PEvent: (event: P2PEarthquakeEvent | null, estimateFill = false) => {
+          updateP2PEventOnMap(map, event, japanGeojson, currentDataSource, estimateFill);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setKMAEvent: (event: any | null) => {
