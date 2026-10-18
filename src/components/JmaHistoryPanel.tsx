@@ -32,7 +32,8 @@ const MIN_INT_OPTIONS: { code: string; ko: string; en: string; ja: string }[] = 
 // 주요 큰 지진 프리셋 (JMA 진도 DB 검색 기간 + 최소진도)
 const PRESETS: { key: string; from: string; to: string; minInt: string }[] = [
   { key: 'preset1923Kanto', from: '1923-09-01', to: '1923-09-01', minInt: 'C' },
-  { key: 'preset1933Sanriku', from: '1933-03-03', to: '1933-03-03', minInt: 'C' },
+  // 1933 본진 최대진도는 구계급 5(5강 근사=50)라 C(55)로 검색하면 0건
+  { key: 'preset1933Sanriku', from: '1933-03-03', to: '1933-03-03', minInt: 'B' },
   { key: 'preset1995Kobe', from: '1995-01-17', to: '1995-01-17', minInt: 'C' },
   { key: 'preset2011Tohoku', from: '2011-03-11', to: '2011-03-12', minInt: 'B' },
   { key: 'preset2016Kumamoto', from: '2016-04-14', to: '2016-04-16', minInt: 'B' },
