@@ -21,16 +21,25 @@ export interface JmaHistoryItem {
   tsunami: { hasTsunami: boolean; maxWaterHeight: number } | null;
 }
 
+export interface JmaHistorySearchResult {
+  items: JmaHistoryItem[];
+  // 검색 종료일이 JMA DB 미반영 구간(약 2일 지연)에 걸리면 해당 날짜, 아니면 null
+  cutoff: string | null;
+}
+
 export async function searchJmaHistory(
   from: string,
   to: string,
   minInt: string
-): Promise<JmaHistoryItem[]> {
+): Promise<JmaHistorySearchResult> {
   const q = new URLSearchParams({ from, to, minInt });
   const resp = await fetch(`/api/jma/history?${q.toString()}`);
   if (!resp.ok) throw new Error('archive search failed');
   const data = await resp.json();
-  return Array.isArray(data.items) ? data.items : [];
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    cutoff: typeof data.cutoff === 'string' ? data.cutoff : null,
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

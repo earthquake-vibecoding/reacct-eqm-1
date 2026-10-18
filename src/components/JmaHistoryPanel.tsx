@@ -73,9 +73,15 @@ export const JmaHistoryPanel: React.FC<JmaHistoryPanelProps> = ({ open, onClose,
     setLoading(true);
     setError('');
     try {
-      const list = await searchJmaHistory(f, tt, mi);
-      setItems(list);
-      if (list.length === 0) setError(t('jmaArchive.empty'));
+      const { items: list, cutoff } = await searchJmaHistory(f, tt, mi);
+      if (cutoff && tt > cutoff) {
+        // 종료일이 DB 미반영 구간이면 0건이 아니라 "아직 미반영" 안내로 분기
+        setItems(null);
+        setError(t('jmaArchive.dataLag', { date: cutoff }));
+      } else {
+        setItems(list);
+        if (list.length === 0) setError(t('jmaArchive.empty'));
+      }
     } catch {
       setError(t('jmaArchive.loadFailed'));
     } finally {

@@ -144,24 +144,33 @@ function searchForm(from: string, to: string) {
 
 // JMA api는 검색 결과를 최대 1000건으로 자른다. 컷에 걸리면 기간을 반갈죽 재귀 조회해
 // 전체를 모은다. (3.11 같은 대지진일이 1000건 컷 뒤로 밀리는 문제 방지)
+// DB 미반영 기간이 종료일에 걸리면 res가 배열 대신 안내 문자열로 온다
+// ("...には YYYY-MM-DD より後のデータはありません") -> cutoff로 추출해 전달.
+interface ShindoSearch {
+  items: any[];
+  cutoff: string | null;
+}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function searchShindoRange(from: string, to: string, depth = 0): Promise<any[]> {
+async function searchShindoRange(from: string, to: string, depth = 0): Promise<ShindoSearch> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw = (await postShindo(searchForm(from, to))) as any;
+  if (typeof raw?.res === 'string') {
+    return { items: [], cutoff: /(\d{4}-\d{2}-\d{2})/.exec(raw.res)?.[1] ?? null };
+  }
   const items = Array.isArray(raw?.res) ? raw.res : [];
-  if (items.length < 1000 || depth >= 8) return items;
+  if (items.length < 1000 || depth >= 8) return { items, cutoff: null };
   const fMs = Date.parse(`${from}T00:00:00Z`);
   const tMs = Date.parse(`${to}T00:00:00Z`);
-  if (!Number.isFinite(fMs) || !Number.isFinite(tMs) || tMs < fMs) return items;
+  if (!Number.isFinite(fMs) || !Number.isFinite(tMs) || tMs < fMs) return { items, cutoff: null };
   const days = (tMs - fMs) / 86_400_000 + 1;
   const half = Math.floor(days / 2);
-  if (half < 1) return items; // 하루 단위인데도 1000건이면 여기까지
+  if (half < 1) return { items, cutoff: null }; // 하루 단위인데도 1000건이면 여기까지
   const splitStart = fMs + half * 86_400_000;
   const [older, newer] = await Promise.all([
     searchShindoRange(from, fmtDay(splitStart - 86_400_000), depth + 1),
     searchShindoRange(fmtDay(splitStart), to, depth + 1),
   ]);
-  return [...older, ...newer];
+  return { items: [...older.items, ...newer.items], cutoff: older.cutoff ?? newer.cutoff };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -178,23 +187,25 @@ export function registerJmaHistoryRoutes(app: express.Express) {
       return res.status(400).json({ error: 'Invalid minInt' });
     }
     try {
-      const data = await cached(`h:${from}:${to}:${minInt}`, async () => {
-        const merged = await searchShindoRange(from, to);
+      const data = (await cached(`h:${from}:${to}:${minInt}`, async () => {
+        const { items: merged, cutoff } = await searchShindoRange(from, to);
         // 부분 조회 병합이라 정렬 깨짐 -> 시각 내림차순 복구 + 중복 제거
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const seen = new Set<string>();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (merged as any[])
-          .filter((it) => {
-            const id = String(it?.id ?? '');
-            if (!id || seen.has(id)) return false;
-            seen.add(id);
-            return true;
-          })
-          .sort((a, b) => (String(b.ot ?? '') > String(a.ot ?? '') ? 1 : -1));
-      });
+        return {
+          cutoff,
+          items: (merged as any[])
+            .filter((it) => {
+              const id = String(it?.id ?? '');
+              if (!id || seen.has(id)) return false;
+              seen.add(id);
+              return true;
+            })
+            .sort((a, b) => (String(b.ot ?? '') > String(a.ot ?? '') ? 1 : -1)),
+        };
+      })) as { items: any[]; cutoff: string | null };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const merged = data as any[];
+      const merged = data.items;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const items = merged.map((it: any) => ({
         id: String(it.id),
@@ -234,7 +245,7 @@ export function registerJmaHistoryRoutes(app: express.Express) {
         tsunami: noaaItems ? findTsunamiMatch(jstToUtcMs(it.time), it.lat, it.lon, it.magnitude, noaaItems) : null,
       }));
 
-      res.json({ items: annotated });
+      res.json({ items: annotated, cutoff: data.cutoff });
     } catch {
       res.status(502).json({ error: 'JMA shindo api request failed' });
     }
