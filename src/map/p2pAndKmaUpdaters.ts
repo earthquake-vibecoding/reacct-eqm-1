@@ -7,10 +7,9 @@ import { estimateAreaScale } from './intensityEstimate';
 // 추정(보간) 진도 채움의 탈색 대상 톤. 실측 생생 진도색과 색으로 구분하기 위한 것
 const ESTIMATE_TONE = '#94a3b8';
 
-const P2P_LAYER_IDS = [
-  'p2p-areas-fill', 'p2p-areas-line', 'p2p-estimated-label', 'p2p-points-layer',
-  'p2p-hypocenter-glow', 'p2p-hypocenter-center',
-];
+// 탭 전환 시 가시성이 바뀌는 레이어만. 진앙지/구역색칠(p2p-areas, p2p-hypocenter)은
+// 어느 탭에서도 항상 표시 — 최신 JMA 발표 지진이 NIED 탭에서도 색칠되어 보이게 유지.
+const P2P_LAYER_IDS = ['p2p-points-layer', 'p2p-estimated-label'];
 
 export function applyDataSourceVisibility(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

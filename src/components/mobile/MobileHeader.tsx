@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../../types';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon, MoreHorizontal, X, Globe, Eye, EyeOff, PaintBucket, MapPin } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, MoreHorizontal, X, Globe, Eye, EyeOff, PaintBucket, MapPin, Bell, BellOff } from 'lucide-react';
 import { audioService } from '../../AudioService';
+import { pushService } from '../../pushService';
 import styles from './MobileView.module.css';
 
 interface MobileHeaderProps {
@@ -50,6 +51,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
     if (!next) {
       audioService.playUpdateBeep(1.0);
     }
+  };
+
+  // 감지 알림 Web Push 토글 — 권한 거부/미지원 브라우저는 false로 복귀
+  const [pushEnabled, setPushEnabled] = useState(pushService.isEnabled);
+
+  const togglePush = async () => {
+    const applied = await pushService.setEnabled(!pushEnabled);
+    setPushEnabled(applied);
   };
 
   const changeLanguage = (lng: 'ko' | 'en' | 'ja') => {
@@ -195,6 +204,18 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               >
                 <span>{isDarkMode ? t('controls.lightMode') : t('controls.darkMode')}</span>
                 {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            </div>
+
+            <div>
+              <div className={styles.settingsSectionTitle}>{t('controls.pushNotifications')}</div>
+              <button
+                type="button"
+                className={styles.settingsRowBtn}
+                onClick={togglePush}
+              >
+                <span>{t('controls.pushNotifications')}</span>
+                {pushEnabled ? <Bell size={18} /> : <BellOff size={18} style={{ opacity: 0.45 }} />}
               </button>
             </div>
 

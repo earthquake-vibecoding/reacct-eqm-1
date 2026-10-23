@@ -66,11 +66,11 @@ export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null)
   map.addSource('p2p-points', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
   map.addLayer({
-    id: 'p2p-areas-fill', type: 'fill', source: 'p2p-areas', layout: { visibility: 'none' },
+    id: 'p2p-areas-fill', type: 'fill', source: 'p2p-areas', layout: { visibility: 'visible' },
     paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['get', 'opacity'] }
   });
   map.addLayer({
-    id: 'p2p-areas-line', type: 'line', source: 'p2p-areas', layout: { visibility: 'none' },
+    id: 'p2p-areas-line', type: 'line', source: 'p2p-areas', layout: { visibility: 'visible' },
     paint: { 'line-color': ['get', 'stroke'], 'line-width': 1.2, 'line-opacity': ['case', ['!=', ['get', 'color'], 'transparent'], 0.8, 0] }
   });
 
@@ -108,19 +108,31 @@ export function setupP2PAndKmaLayers(map: any, onHover: (info: HoverInfo | null)
   });
   map.addLayer({
     id: 'p2p-hypocenter-glow', type: 'circle', source: 'p2p-hypocenter',
-    paint: { 'circle-radius': 16, 'circle-color': '#dc2626', 'circle-opacity': 0.35, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 10, 8, 16, 12, 20],
+      'circle-color': '#dc2626', 'circle-opacity': 0.35, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff'
+    }
   });
   map.addLayer({
     id: 'p2p-hypocenter-center', type: 'circle', source: 'p2p-hypocenter',
-    paint: { 'circle-radius': 6, 'circle-color': '#ffffff', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#dc2626' }
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 4, 8, 6, 12, 8],
+      'circle-color': '#ffffff', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#dc2626'
+    }
   });
   map.addLayer({
     id: 'kma-hypocenter-glow', type: 'circle', source: 'kma-hypocenter',
-    paint: { 'circle-radius': 24, 'circle-color': '#2563eb', 'circle-opacity': 0.35, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 14, 8, 24, 12, 30],
+      'circle-color': '#2563eb', 'circle-opacity': 0.35, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff'
+    }
   });
   map.addLayer({
     id: 'kma-hypocenter-center', type: 'circle', source: 'kma-hypocenter',
-    paint: { 'circle-radius': 8, 'circle-color': '#ffffff', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#2563eb' }
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 5, 8, 8, 12, 11],
+      'circle-color': '#ffffff', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#2563eb'
+    }
   });
 
   const clearHover = () => { map.getCanvas().style.cursor = ''; onHover(null); };

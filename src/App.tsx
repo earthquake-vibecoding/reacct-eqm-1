@@ -305,15 +305,16 @@ export default function App() {
       .catch((err) => console.warn('Failed to pass station metas to P2PQuakeService:', err));
 
     const unsubscribeP2P = p2pService.onEvent((ev) => {
-      const allEvents = p2pService.getLatestEvents();
-      setP2PEvents([...allEvents]);
-      setSelectedP2PEvent((prev) => {
-        const next = prev ? (prev.eventId === ev.eventId ? ev : prev) : ev;
-        if (mapControllerRef.current) {
-          mapControllerRef.current.setP2PEvent(next, estimateFillRef.current);
-        }
-        return next;
-      });
+      setP2PEvents([...p2pService.getLatestEvents()]);
+      const prev = selectedP2PEventRef.current;
+      const next = prev ? (prev.eventId === ev.eventId ? ev : prev) : ev;
+      selectedP2PEventRef.current = next;
+      // JMAstations 로드 후 재통지는 같은 객체 참조라 setState가 생략될 수 있어
+      // 지도 적용은 setState 밖에서 직접 수행 (초기 파싱 경합 수복)
+      if (mapControllerRef.current) {
+        mapControllerRef.current.setP2PEvent(next, estimateFillRef.current);
+      }
+      setSelectedP2PEvent(next);
     });
 
     p2pService.start();
@@ -395,8 +396,9 @@ export default function App() {
         }
       );
       mapControllerRef.current = controller;
-      if (selectedP2PEvent) {
-        controller.setP2PEvent(selectedP2PEvent);
+      // stale 클로저 대신 ref로 최신 선택 이벤트 적용
+      if (selectedP2PEventRef.current) {
+        controller.setP2PEvent(selectedP2PEventRef.current, estimateFillRef.current);
       }
       setMapLoaded(true);
     });

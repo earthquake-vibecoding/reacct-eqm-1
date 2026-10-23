@@ -4,6 +4,7 @@ import { QuakeDetectService } from './src/QuakeDetectService';
 import type { BufferedFrame, DetectedEventHistoryEntry, IntensityUpdatePayload, LpUpdatePayload, SsePayload, StationPointMeta, WolfxServerEEW } from './server/intensity-types';
 import { INSET_PROJECTION, MAIN_PROJECTION, getIntensityFromRGB, getLpFromRGB, isInInsetRegion, jindoToStr, lpClsToStr, parseIntensityGif, parseLpGif, validateSpatialSupport } from './server/kmoni-pixel';
 import { WebhookNotifier } from './server/webhook-notifier';
+import { PushNotifier } from './server/push-notifier';
 import { EventHistoryStore } from './server/history-store';
 import { fetchKmoniGifWithDelay, fetchLmoniGifWithDelay, fetchWolfxActiveEEW, fetchYahooIntensitiesWithDelay } from './server/upstream-fetchers';
 
@@ -27,6 +28,7 @@ export class ServerIntensityAggregator {
 
   private detectService: QuakeDetectService | null = null;
   private webhook = new WebhookNotifier();
+  private push = new PushNotifier();
   private historyStore = new EventHistoryStore();
   private lastKmoniGif: Buffer | null = null;
   private lastEewGif: Buffer | null = null;
@@ -53,6 +55,7 @@ export class ServerIntensityAggregator {
   }
 
   public getHistory(): DetectedEventHistoryEntry[] { return this.historyStore.getHistory(); }
+  public getPushNotifier(): PushNotifier { return this.push; }
   public getAnimationPath(id: number): string | null { return this.historyStore.getAnimationPath(id); }
   public getReplayPath(id: number): string | null { return this.historyStore.getReplayPath(id); }
 
@@ -140,6 +143,7 @@ export class ServerIntensityAggregator {
           }
           this.historyStore.updateStats(this.detectService?.getTopStations(1)?.[0]);
           this.triggerCurrentWebhook(payload.source, true);
+          this.push.notifyNewEvent(this.detectService?.getTopStations(1)?.[0] ?? null, this.activeEew);
         },
         onSoundTriggered: () => {
           this.historyStore.updateStats(this.detectService?.getTopStations(1)?.[0]);

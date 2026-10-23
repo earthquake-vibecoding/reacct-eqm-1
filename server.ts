@@ -8,6 +8,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { ServerIntensityAggregator } from "./server-intensity";
 import { registerJmaHistoryRoutes } from "./server/jma-history";
+import { registerPushRoutes } from "./server/push-routes";
 
 export function createApp() {
   const app = express();
@@ -273,6 +274,9 @@ export function createApp() {
 
   // 7. JMA 진도 DB 아카이브 검색 (1919년~현재)
   registerJmaHistoryRoutes(app);
+
+  // 8. 감지 Web Push 구독 관리
+  registerPushRoutes(app, aggregator.getPushNotifier());
 
   app.use('/api', (req, res) => {
     res.status(404).json({ error: "Not found" });

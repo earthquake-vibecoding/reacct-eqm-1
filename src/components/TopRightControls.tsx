@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataSourceType } from '../types';
 import styles from '../App.module.css';
-import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff, PaintBucket, MapPin } from 'lucide-react';
+import { Volume2, VolumeX, LocateFixed, Sun, Moon, Eye, EyeOff, PaintBucket, MapPin, Download, Bell, BellOff } from 'lucide-react';
 import { audioService } from '../AudioService';
+import { pushService } from '../pushService';
 
 interface TopRightControlsProps {
   dataSource: DataSourceType;
@@ -63,6 +64,43 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
     if (!next) {
        audioService.playUpdateBeep(1.0);
     }
+  };
+
+  // 감지 알림 Web Push 토글 — 권한 거부/미지원 브라우저는 false로 복귀
+  const [pushEnabled, setPushEnabled] = useState(pushService.isEnabled);
+
+  const togglePush = async () => {
+    const applied = await pushService.setEnabled(!pushEnabled);
+    setPushEnabled(applied);
+  };
+
+  // PWA 설치: 설치 가능한 브라우저(Chrome/Edge/Android)에서만 버튼 노출.
+  // iOS Safari는 beforeinstallprompt 미지원 → 공유 → 홈 화면에 추가로 안내 (버튼 숨김)
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true;
+    if (standalone) return;
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
   };
 
   return (
@@ -136,6 +174,16 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
         <button
           type="button"
           className={styles.iconBtn}
+          onClick={togglePush}
+          data-tip={t('controls.pushNotifications')}
+          aria-label={t('controls.pushNotifications')}
+          style={{ opacity: pushEnabled ? 1 : 0.45 }}
+        >
+          {pushEnabled ? <Bell size={16} /> : <BellOff size={16} />}
+        </button>
+        <button
+          type="button"
+          className={styles.iconBtn}
           onClick={onToggleStations}
           data-tip={showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}
           aria-label={showStations ? t('controls.hideP2pPoints') : t('controls.showP2pPoints')}
@@ -171,6 +219,11 @@ export const TopRightControls: React.FC<TopRightControlsProps> = ({
         <button type="button" className={styles.iconBtn} onClick={() => setIsDarkMode(!isDarkMode)} data-tip={isDarkMode ? t('controls.lightMode') : t('controls.darkMode')} aria-label={isDarkMode ? t('controls.lightMode') : t('controls.darkMode')}>
           {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
         </button>
+        {installPrompt && (
+          <button type="button" className={styles.iconBtn} onClick={handleInstall} data-tip={t('controls.installApp')} aria-label={t('controls.installApp')}>
+            <Download size={16} />
+          </button>
+        )}
       </div>
     </div>
   );

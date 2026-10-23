@@ -66,7 +66,9 @@ export async function loadAndSetupStationLayers(
       'circle-radius': [
         'interpolate', ['linear'], ['zoom'],
         4, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 4.8, 1.8],
-        8, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 6.8, 3.0]
+        8, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 7.5, 4.0],
+        11, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 12, 7.5],
+        14, ['case', ['<', ['get', 'intensityCode'], 0], 0, ['==', ['get', 'color'], 'transparent'], 0, ['boolean', ['get', 'detected'], false], 16, 11]
       ],
       'circle-color': ['get', 'color'],
       'circle-opacity': [
@@ -74,7 +76,7 @@ export async function loadAndSetupStationLayers(
         ['<', ['get', 'intensityCode'], 0], 0,
         ['==', ['get', 'color'], 'transparent'], 0,
         ['==', ['get', 'color'], 'rgba(0, 0, 0, 0)'], 0,
-        ['boolean', ['get', 'detected'], false], 1.0, 0.3
+        1.0
       ],
       'circle-stroke-width': [
         'case',

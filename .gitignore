@@ -1,12 +1,22 @@
+# 의존성 / 빌드 산출물
 node_modules/
-build/
 dist/
+build/
 coverage/
-.DS_Store
-*.log
-.env*
-!.env.
-scripts/**
+
+# 환경 변수 (시크릿) — 예시 파일만 커밋
+.env
+.env.local
+!.env.example
+
+# 런타임 데이터 (감지 히스토리, 푸시 구독, 이벤트 애니메이션)
 data/
-.zcode/**
+
+# 배포 스크립트 (서버 주소 포함, 로컬 전용)
 deploy.sh
+
+# 기타
+*.log
+.DS_Store
+.zcode/
+tmp-test/

@@ -19,6 +19,8 @@ export const resources = {
       },
       controls: {
         resetCamera: '화면 초기화',
+        installApp: '앱 설치',
+        pushNotifications: '감지 알림 (푸시)',
         soundOn: '소리 켜기',
         soundOff: '소리 끄기',
         lightMode: '라이트 모드',
@@ -205,6 +207,8 @@ export const resources = {
       },
       controls: {
         resetCamera: 'Reset View',
+        installApp: 'Install app',
+        pushNotifications: 'Detection alerts (push)',
         soundOn: 'Sound on',
         soundOff: 'Mute',
         lightMode: 'Light Mode',
@@ -391,6 +395,8 @@ export const resources = {
       },
       controls: {
         resetCamera: '画面リセット',
+        installApp: 'アプリをインストール',
+        pushNotifications: '検知通知（プッシュ）',
         soundOn: '音オン',
         soundOff: 'ミュート',
         lightMode: 'ライトモード',

@@ -141,7 +141,7 @@ export async function setupBaseAndEewLayers(
     type: 'circle',
     source: 'eew-epicenter',
     paint: {
-      'circle-radius': 14,
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 9, 8, 14, 12, 18],
       'circle-color': '#ef4444',
       'circle-opacity': 0.35,
       'circle-stroke-width': 2,
@@ -154,7 +154,7 @@ export async function setupBaseAndEewLayers(
     type: 'circle',
     source: 'eew-epicenter',
     paint: {
-      'circle-radius': 5,
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 3.5, 8, 5, 12, 7],
       'circle-color': '#ffffff',
       'circle-stroke-width': 2,
       'circle-stroke-color': '#ef4444'
