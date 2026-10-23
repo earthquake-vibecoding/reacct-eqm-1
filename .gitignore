@@ -9,4 +9,4 @@ coverage/
 scripts/**
 data/
 .zcode/**
-/Users/wndud/Documents/reacct-eqm-1/deploy.shdeploy.sh
+deploy.sh
